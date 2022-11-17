@@ -1,0 +1,5 @@
+options:
+  lineNumbers: true
+  imagePrefix: pasted-
+editor:
+  lineNumbers: true
