@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>Hadoop高可用集群搭建 | Hexo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="之前的博客写了搭建hadoop集群环境，今天写一写搭建高可用（HA）环境。Hadoop-HA模式大致分为两个(个人在学习中的理解)：  namenode 高可用 yarn 高可用">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Hadoop高可用集群搭建">
+<meta property="og:url" content="http://example.com/2022/11/05/HadoopHA/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="之前的博客写了搭建hadoop集群环境，今天写一写搭建高可用（HA）环境。Hadoop-HA模式大致分为两个(个人在学习中的理解)：  namenode 高可用 yarn 高可用">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="http://example.com/images/pasted-8.png">
+<meta property="og:image" content="http://example.com/images/pasted-6.png">
+<meta property="og:image" content="http://example.com/images/pasted-7.png">
+<meta property="article:published_time" content="2022-11-05T14:03:53.000Z">
+<meta property="article:modified_time" content="2022-11-16T17:11:41.766Z">
+<meta property="article:author" content="John Doe">
+<meta property="article:tag" content="Linux">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/images/pasted-8.png">
+  
+    <link rel="alternate" href="/atom.xml" title="Hexo" type="application/atom+xml">
+  
+  
+    <link rel="shortcut icon" href="/favicon.png">
+  
+  
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/typeface-source-code-pro@0.0.71/index.min.css">
+
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">Hexo</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://example.com"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-HadoopHA" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2022/11/05/HadoopHA/" class="article-date">
+  <time class="dt-published" datetime="2022-11-05T14:03:53.000Z" itemprop="datePublished">2022-11-05</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      Hadoop高可用集群搭建
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+        <p>之前的博客写了搭建hadoop集群环境，今天写一写搭建高可用（HA）环境。<br>Hadoop-HA模式大致分为两个(个人在学习中的理解)：</p>
+<ul>
+<li>namenode 高可用</li>
+<li>yarn 高可用</li>
+</ul>
+<p><img src="/images/pasted-8.png" alt="Hadoop HA"></p>
+<span id="more"></span>
+<h2 id="一、NameNode-HA"><a href="#一、NameNode-HA" class="headerlink" title="一、NameNode HA"></a>一、NameNode HA</h2><ul>
+<li>首先启动zookeeper集群</li>
+</ul>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_">#</span><span class="language-bash">先启动三台zookeeper集群：</span></span><br><span class="line">[root@hadoop01 bin]# pwd</span><br><span class="line">/opt/module/zookeeper-3.4.10/bin</span><br><span class="line">[root@hadoop01 bin]# ./zkServer.sh start</span><br><span class="line"></span><br><span class="line">[root@hadoop02 bin]# pwd</span><br><span class="line">/opt/module/zookeeper-3.4.10/bin</span><br><span class="line">[root@hadoop02 bin]# ./zkServer.sh start</span><br><span class="line"></span><br><span class="line">[root@hadoop03 bin]# pwd</span><br><span class="line">/opt/module/zookeeper-3.4.10/bin</span><br><span class="line">[root@hadoop03 bin]# ./zkServer.sh start</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_">#</span><span class="language-bash">分别查看三台状态</span></span><br><span class="line">[root@hadoop01 bin]# ./zkServer.sh status</span><br><span class="line">ZooKeeper JMX enabled by default</span><br><span class="line">Using config: /opt/module/zookeeper-3.4.10/bin/../conf/zoo.cfg</span><br><span class="line">Mode: follower</span><br><span class="line"></span><br><span class="line">[root@hadoop02 bin]# ./zkServer.sh status</span><br><span class="line">ZooKeeper JMX enabled by default</span><br><span class="line">Using config: /opt/module/zookeeper-3.4.10/bin/../conf/zoo.cfg</span><br><span class="line">Mode: leader</span><br><span class="line"></span><br><span class="line">[root@hadoop03 bin]# ./zkServer.sh status</span><br><span class="line">ZooKeeper JMX enabled by default</span><br><span class="line">Using config: /opt/module/zookeeper-3.4.10/bin/../conf/zoo.cfg</span><br><span class="line">Mode: follower</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">启动成功</span></span><br></pre></td></tr></table></figure>
+<ul>
+<li>修改配置</li>
+</ul>
+<p>修改core-site.xml</p>
+<p>修改hdfs.site.xml</p>
+<ul>
+<li>启动journalnode</li>
+</ul>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">[root@hadoop01 hadoop]# sbin/hadoop-daemon.sh start journalnode</span><br><span class="line">starting journalnode, logging to /opt/module/hadoop/logs/hadoop-root-journalnode-hadoop01.out</span><br><span class="line">[root@hadoop01 hadoop]# jps</span><br><span class="line">5873 JournalNode</span><br><span class="line">5511 QuorumPeerMain</span><br><span class="line">5911 Jps</span><br><span class="line"></span><br><span class="line">[root@hadoop03 hadoop]# sbin/hadoop-daemon.sh start journalnode</span><br><span class="line">starting journalnode, logging to /opt/module/hadoop/logs/hadoop-root-journalnode-hadoop03.out</span><br><span class="line">[root@hadoop03 hadoop]# jps</span><br><span class="line">5344 JournalNode</span><br><span class="line">5382 Jps</span><br><span class="line">5021 QuorumPeerMain</span><br></pre></td></tr></table></figure>
+<ul>
+<li>格式化NameNode并启动，也是只需要启动hadoop01和hadoop03</li>
+</ul>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">第一个namenode格式化</span></span><br><span class="line">[root@hadoop01 hadoop]# bin/hdfs namenode -format</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">格式化之后启动namenode</span></span><br><span class="line">[root@hadoop01 hadoop]# sbin/hadoop-daemon.sh start namenode</span><br><span class="line">starting namenode, logging to /opt/module/hadoop/logs/hadoop-root-namenode-hadoop01.out</span><br><span class="line">[root@hadoop01 hadoop]# jps</span><br><span class="line">5511 QuorumPeerMain</span><br><span class="line">7000 Jps</span><br><span class="line">6591 JournalNode</span><br><span class="line">6895 NameNode</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">第二个namenode同步第一个</span></span><br><span class="line">[root@hadoop03 hadoop]# bin/hdfs namenode -bootstrapStandby</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">启动第二个namenode</span></span><br><span class="line">[root@hadoop03 hadoop]# sbin/hadoop-daemon.sh start namenode</span><br></pre></td></tr></table></figure>
+<ul>
+<li>查看namenode(如下图，都启动成功，只是都在standby状态)</li>
+</ul>
+<p><img src="/images/pasted-6.png" alt="hadoop01"><br><img src="/images/pasted-7.png" alt="hadoop03"></p>
+<ul>
+<li>手动切换nn1为激活状态</li>
+</ul>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line">[root@hadoop01 hadoop]# bin/hdfs haadmin -transitionToActive nn1</span><br><span class="line">Automatic failover is enabled for NameNode at hadoop03/192.168.170.133:8020</span><br><span class="line">Refusing to manually manage HA state, since it may cause</span><br><span class="line">a split-brain scenario or other incorrect state.</span><br><span class="line">If you are very sure you know what you are doing, please </span><br><span class="line">specify the forcemanual flag.</span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">这里需要强制切换</span></span><br><span class="line"></span><br><span class="line">[root@hadoop01 hadoop]# bin/hdfs haadmin -transitionToActive --forcemanual nn1</span><br><span class="line">You have specified the forcemanual flag. This flag is dangerous, as it can induce a split-brain scenario that WILL CORRUPT your HDFS namespace, possibly irrecoverably.</span><br><span class="line"></span><br><span class="line">It is recommended not to use this flag, but instead to shut down the cluster and disable automatic failover if you prefer to manually manage your HA state.</span><br><span class="line"></span><br><span class="line">You may abort safely by answering &#x27;n&#x27; or hitting ^C now.</span><br><span class="line"></span><br><span class="line">Are you sure you want to continue? (Y or N) y</span><br><span class="line">18/08/21 16:12:59 WARN ha.HAAdmin: Proceeding with manual HA state management even though</span><br><span class="line">automatic failover is enabled for NameNode at hadoop03/192.168.170.133:8020</span><br><span class="line">18/08/21 16:13:00 WARN ha.HAAdmin: Proceeding with manual HA state management even though</span><br><span class="line">automatic failover is enabled for NameNode at hadoop01/192.168.170.131:8020</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">可以看到nn2已经激活，nn1在standby状态</span></span><br><span class="line">[root@hadoop01 hadoop]# bin/hdfs haadmin -getServiceState nn1</span><br><span class="line">standby</span><br><span class="line">[root@hadoop01 hadoop]# bin/hdfs haadmin -getServiceState nn2</span><br><span class="line">active</span><br></pre></td></tr></table></figure>
+<ul>
+<li>在zookeeper上配置故障自动转移节点</li>
+</ul>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">[root@hadoop01 hadoop]# bin/hdfs zkfc -formatZK</span><br><span class="line">[zk: localhost:2181(CONNECTED) 5] ls /</span><br><span class="line">[zookeeper, hadoop-ha]</span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">可以看到zookeeper上已经有了hadoop-ha节点了</span></span><br></pre></td></tr></table></figure>
+<ul>
+<li>启动集群</li>
+</ul>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">[root@hadoop01 hadoop]# sbin/start-dfs.sh</span><br><span class="line">Starting namenodes on [hadoop01 hadoop03]</span><br><span class="line">hadoop01: namenode running as process 6895. Stop it first.</span><br><span class="line">hadoop03: namenode running as process 6103. Stop it first.</span><br><span class="line">hadoop03: starting datanode, logging to /opt/module/hadoop/logs/hadoop-root-datanode-hadoop03.out</span><br><span class="line">hadoop01: starting datanode, logging to /opt/module/hadoop/logs/hadoop-root-datanode-hadoop01.out</span><br><span class="line">hadoop02: starting datanode, logging to /opt/module/hadoop/logs/hadoop-root-datanode-hadoop02.out</span><br><span class="line">Starting journal nodes [hadoop01 hadoop02 hadoop03]</span><br><span class="line">hadoop01: journalnode running as process 6591. Stop it first.</span><br><span class="line">hadoop03: journalnode running as process 5814. Stop it first.</span><br><span class="line">hadoop02: journalnode running as process 5450. Stop it first.</span><br><span class="line">Starting ZK Failover Controllers on NN hosts [hadoop01 hadoop03]</span><br><span class="line">hadoop01: starting zkfc, logging to /opt/module/hadoop/logs/hadoop-root-zkfc-hadoop01.out</span><br><span class="line">hadoop03: starting zkfc, logging to /opt/module/hadoop/logs/hadoop-root-zkfc-hadoop03.out</span><br><span class="line">[root@hadoop01 hadoop]# jps</span><br><span class="line">8114 DFSZKFailoverController</span><br><span class="line">7478 ZooKeeperMain</span><br><span class="line">5511 QuorumPeerMain</span><br><span class="line">8169 Jps</span><br><span class="line">7803 DataNode</span><br><span class="line">6591 JournalNode</span><br><span class="line">6895 NameNode</span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">在三台设备上分别jps一下，都启动了</span></span><br></pre></td></tr></table></figure>
+<ul>
+<li>接下来kill掉一个nn1，看看zookeeper是否会自动切换nn2</li>
+</ul>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br></pre></td><td class="code"><pre><span class="line">[root@hadoop03 hadoop]# jps</span><br><span class="line">6708 DFSZKFailoverController</span><br><span class="line">6549 DataNode</span><br><span class="line">5814 JournalNode</span><br><span class="line">6103 NameNode</span><br><span class="line">6825 Jps</span><br><span class="line">5021 QuorumPeerMain</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">杀掉namenode进程</span></span><br><span class="line">[root@hadoop03 hadoop]# kill -9 6103</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_">#</span><span class="language-bash">查看nn2状态，连接不上了</span></span><br><span class="line">[root@hadoop03 hadoop]# bin/hdfs haadmin -getServiceState nn2</span><br><span class="line">18/08/21 16:28:52 INFO ipc.Client: Retrying connect to server: hadoop03/192.168.170.133:8020. Already tried 0 time(s); retry policy is RetryUpToMaximumCountWithFixedSleep(maxRetries=1, sleepTime=1000 MILLISECONDS)</span><br><span class="line">Operation failed: Call From hadoop03/192.168.170.133 to hadoop03:8020 failed on connection exception: java.net.ConnectException: Connection refused; For more details see:  http://wiki.apache.org/hadoop/ConnectionRefused</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">查看nn1状态，已经激活了</span></span><br><span class="line">[root@hadoop03 hadoop]# bin/hdfs haadmin -getServiceState nn1</span><br><span class="line">active</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_">#</span><span class="language-bash">重新启动同步nn1，并启动nn2</span></span><br><span class="line">[root@hadoop03 hadoop]# bin/hdfs namenode -bootstrapStandby</span><br><span class="line">[root@hadoop03 hadoop]# sbin/hadoop-daemon.sh start namenode</span><br><span class="line">starting namenode, logging to /opt/module/hadoop/logs/hadoop-root-namenode-hadoop03.out</span><br><span class="line">[root@hadoop03 hadoop]# jps</span><br><span class="line">7169 Jps</span><br><span class="line">6708 DFSZKFailoverController</span><br><span class="line">6549 DataNode</span><br><span class="line">5814 JournalNode</span><br><span class="line">7084 NameNode</span><br><span class="line">5021 QuorumPeerMain</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">接下来杀掉nn1，看看会不会自动激活nn2</span></span><br><span class="line">[root@hadoop01 hadoop]# jps</span><br><span class="line">8114 DFSZKFailoverController</span><br><span class="line">8418 Jps</span><br><span class="line">7478 ZooKeeperMain</span><br><span class="line">5511 QuorumPeerMain</span><br><span class="line">7803 DataNode</span><br><span class="line">6591 JournalNode</span><br><span class="line">6895 NameNode</span><br><span class="line">[root@hadoop01 hadoop]# kill -9 6895</span><br><span class="line">[root@hadoop01 hadoop]# bin/hdfs haadmin -getServiceState nn1</span><br><span class="line">18/08/21 16:32:11 INFO ipc.Client: Retrying connect to server: hadoop01/192.168.170.131:8020. Already tried 0 time(s); retry policy is RetryUpToMaximumCountWithFixedSleep(maxRetries=1, sleepTime=1000 MILLISECONDS)</span><br><span class="line">Operation failed: Call From hadoop01/192.168.170.131 to hadoop01:8020 failed on connection exception: java.net.ConnectException: Connection refused; For more details see:  http://wiki.apache.org/hadoop/ConnectionRefused</span><br><span class="line">[root@hadoop01 hadoop]# bin/hdfs haadmin -getServiceState nn2</span><br><span class="line">active</span><br></pre></td></tr></table></figure>
+<p><strong>NameNode-HA搭建完成！</strong></p>
+<h2 id="二、Yarn-HA"><a href="#二、Yarn-HA" class="headerlink" title="二、Yarn HA"></a>二、Yarn HA</h2><ul>
+<li>修改配置</li>
+</ul>
+<p>修改yarn-site.xml</p>
+<ul>
+<li>启动yarn，由于hadoop02是resourceManager，所以在hadoop02上启动</li>
+</ul>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line">[root@hadoop02 hadoop]# sbin/start-yarn.sh</span><br><span class="line">starting yarn daemons</span><br><span class="line">starting resourcemanager, logging to /opt/module/hadoop/logs/yarn-root-resourcemanager-hadoop02.out</span><br><span class="line">hadoop02: starting nodemanager, logging to /opt/module/hadoop/logs/yarn-root-nodemanager-hadoop02.out</span><br><span class="line">hadoop01: starting nodemanager, logging to /opt/module/hadoop/logs/yarn-root-nodemanager-hadoop01.out</span><br><span class="line">hadoop03: starting nodemanager, logging to /opt/module/hadoop/logs/yarn-root-nodemanager-hadoop03.out</span><br><span class="line">[root@hadoop02 hadoop]# jps</span><br><span class="line">4898 QuorumPeerMain</span><br><span class="line">7352 ResourceManager</span><br><span class="line">5801 DataNode</span><br><span class="line">7449 NodeManager</span><br><span class="line">5450 JournalNode</span><br><span class="line">7482 Jps</span><br><span class="line"></span><br><span class="line">[root@hadoop01 hadoop]# jps</span><br><span class="line">8114 DFSZKFailoverController</span><br><span class="line">9508 Jps</span><br><span class="line">7478 ZooKeeperMain</span><br><span class="line">5511 QuorumPeerMain</span><br><span class="line">7803 DataNode</span><br><span class="line">9389 NodeManager</span><br><span class="line">6591 JournalNode</span><br><span class="line"></span><br><span class="line">[root@hadoop03 hadoop]# jps</span><br><span class="line">6708 DFSZKFailoverController</span><br><span class="line">6549 DataNode</span><br><span class="line">5814 JournalNode</span><br><span class="line">7961 Jps</span><br><span class="line">7084 NameNode</span><br><span class="line">7932 NodeManager</span><br><span class="line">5021 QuorumPeerMain</span><br></pre></td></tr></table></figure>
+<ul>
+<li>在hadoop03上启动resourceManager</li>
+</ul>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">[root@hadoop03 hadoop]# sbin/yarn-daemon.sh start resourcemanager</span><br><span class="line">starting resourcemanager, logging to /opt/module/hadoop/logs/yarn-root-resourcemanager-hadoop03.out</span><br><span class="line">[root@hadoop03 hadoop]# jps</span><br><span class="line">6708 DFSZKFailoverController</span><br><span class="line">6549 DataNode</span><br><span class="line">5814 JournalNode</span><br><span class="line">8105 ResourceManager</span><br><span class="line">7084 NameNode</span><br><span class="line">7932 NodeManager</span><br><span class="line">8140 Jps</span><br><span class="line">5021 QuorumPeerMain</span><br></pre></td></tr></table></figure>
+<ul>
+<li>查看两个resourceManager的状态</li>
+</ul>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">[root@hadoop03 hadoop]# bin/yarn rmadmin -getServiceState rm1</span><br><span class="line">active</span><br><span class="line">[root@hadoop03 hadoop]# bin/yarn rmadmin -getServiceState rm2</span><br><span class="line">standby</span><br></pre></td></tr></table></figure>
+<ul>
+<li>杀掉rm1，看看是否会自动切换rm2</li>
+</ul>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br></pre></td><td class="code"><pre><span class="line">[root@hadoop02 hadoop]# jps</span><br><span class="line">4898 QuorumPeerMain</span><br><span class="line">7352 ResourceManager</span><br><span class="line">5801 DataNode</span><br><span class="line">7449 NodeManager</span><br><span class="line">5450 JournalNode</span><br><span class="line">7854 Jps</span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash"><span class="built_in">kill</span>掉rm1</span></span><br><span class="line">[root@hadoop02 hadoop]# kill -9 7352</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">查看rm1状态，已经离线了</span></span><br><span class="line">[root@hadoop02 hadoop]# bin/yarn rmadmin -getServiceState rm1</span><br><span class="line">18/08/21 17:22:31 INFO ipc.Client: Retrying connect to server: hadoop02/192.168.170.132:8033. Already tried 0 time(s); retry policy is RetryUpToMaximumCountWithFixedSleep(maxRetries=1, sleepTime=1000 MILLISECONDS)</span><br><span class="line">Operation failed: Call From hadoop02/192.168.170.132 to hadoop02:8033 failed on connection exception: java.net.ConnectException: Connection refused; For more details see:  http://wiki.apache.org/hadoop/ConnectionRefused</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">查看rm2状态，激活了</span></span><br><span class="line">[root@hadoop02 hadoop]# bin/yarn rmadmin -getServiceState rm2</span><br><span class="line">active</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">接下来重启rm1，<span class="built_in">kill</span>掉rm2，看看是否会切换</span></span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">启动hadoop02的rm1</span></span><br><span class="line">[root@hadoop02 hadoop]# sbin/yarn-daemon.sh start resourcemanager</span><br><span class="line">starting resourcemanager, logging to /opt/module/hadoop/logs/yarn-root-resourcemanager-hadoop02.out</span><br><span class="line">[root@hadoop02 hadoop]# jps</span><br><span class="line">4898 QuorumPeerMain</span><br><span class="line">5801 DataNode</span><br><span class="line">7449 NodeManager</span><br><span class="line">5450 JournalNode</span><br><span class="line">8091 Jps</span><br><span class="line">8046 ResourceManager</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash"><span class="built_in">kill</span> hadoop03的rm2</span></span><br><span class="line">[root@hadoop03 hadoop]# jps</span><br><span class="line">6708 DFSZKFailoverController</span><br><span class="line">6549 DataNode</span><br><span class="line">5814 JournalNode</span><br><span class="line">8503 Jps</span><br><span class="line">8105 ResourceManager</span><br><span class="line">7084 NameNode</span><br><span class="line">7932 NodeManager</span><br><span class="line">5021 QuorumPeerMain</span><br><span class="line">[root@hadoop03 hadoop]# kill 8105</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">查看rm1和rm2的状态</span></span><br><span class="line">[root@hadoop03 hadoop]# bin/yarn rmadmin -getServiceState rm1</span><br><span class="line">active</span><br><span class="line">[root@hadoop03 hadoop]# bin/yarn rmadmin -getServiceState rm2</span><br><span class="line">18/08/21 17:26:23 INFO ipc.Client: Retrying connect to server: hadoop03/192.168.170.133:8033. Already tried 0 time(s); retry policy is RetryUpToMaximumCountWithFixedSleep(maxRetries=1, sleepTime=1000 MILLISECONDS)</span><br><span class="line">Operation failed: Call From hadoop03/192.168.170.133 to hadoop03:8033 failed on connection exception: java.net.ConnectException: Connection refused; For more details see:  http://wiki.apache.org/hadoop/ConnectionRefused</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">可以看到，已经切换成功了</span></span><br></pre></td></tr></table></figure>
+<p><strong>Yarn-HA搭建成功！</strong></p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://example.com/2022/11/05/HadoopHA/" data-id="clal620zy000164s6c5rxdive" data-title="Hadoop高可用集群搭建" class="article-share-link">Share</a>
+      
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Linux/" rel="tag">Linux</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2022/11/11/ADB%E8%B0%83%E8%AF%95/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          ADB调试
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2022/09/29/Termux/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">Termux高级终端</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Categories</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Diary/">Diary</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/Termux/">Termux</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%B0%E6%8D%AE%E9%87%87%E9%9B%86/">数据采集</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%9C%9F%E6%9C%AB%E5%A4%8D%E4%B9%A0/">期末复习</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/">机器学习</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget">
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/ADB/" rel="tag">ADB</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Android/" rel="tag">Android</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Games/" rel="tag">Games</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Linux/" rel="tag">Linux</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/PS4/" rel="tag">PS4</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/ADB/" style="font-size: 10px;">ADB</a> <a href="/tags/Android/" style="font-size: 20px;">Android</a> <a href="/tags/Games/" style="font-size: 10px;">Games</a> <a href="/tags/Linux/" style="font-size: 10px;">Linux</a> <a href="/tags/PS4/" style="font-size: 10px;">PS4</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Archives</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/11/">November 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/09/">September 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/06/">June 2022</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recent Posts</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2022/11/17/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/">机器学习</a>
+          </li>
+        
+          <li>
+            <a href="/2022/11/16/Kafka%E5%85%A5%E9%97%A8/">Kafka入门</a>
+          </li>
+        
+          <li>
+            <a href="/2022/11/11/Scrapy%E7%88%AC%E8%99%AB%E5%85%A5%E9%97%A8/">Scrapy爬虫入门</a>
+          </li>
+        
+          <li>
+            <a href="/2022/11/11/Python%E7%88%AC%E8%99%AB%E5%85%A5%E9%97%A8/">Python爬虫入门</a>
+          </li>
+        
+          <li>
+            <a href="/2022/11/11/ADB%E8%B0%83%E8%AF%95/">ADB调试</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2022 John Doe<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.4.1.min.js"></script>
+
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>
