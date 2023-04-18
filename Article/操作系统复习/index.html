@@ -1,0 +1,634 @@
+<!doctype html>
+<html lang="zh"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"><meta><title>操作系统复习 - Nameless1732</title><link rel="manifest" href="/manifest.json"><meta name="application-name" content="Nameless1732"><meta name="msapplication-TileImage" content="/img/favicon.svg"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Nameless1732"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="description" content="前言 本篇文章的内容结合了哈工大李治军老师操作系统课程，王道考研操作系统的资料以及学习了B站CodeSheep的一次知识梳理，并且为了便于理解学习，增加了个人的一些解释。总之，概括而言对于开发人员来说，操作系统需要下四个方面进行学习：进程&amp;#x2F;线程；并发&amp;#x2F;锁；内存管理与调度；I&amp;#x2F;O原理，本文也将围绕这几点逐渐深入。"><meta property="og:type" content="blog"><meta property="og:title" content="操作系统复习"><meta property="og:url" content="http://nameless1732.github.io/Article/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%A4%8D%E4%B9%A0/"><meta property="og:site_name" content="Nameless1732"><meta property="og:description" content="前言 本篇文章的内容结合了哈工大李治军老师操作系统课程，王道考研操作系统的资料以及学习了B站CodeSheep的一次知识梳理，并且为了便于理解学习，增加了个人的一些解释。总之，概括而言对于开发人员来说，操作系统需要下四个方面进行学习：进程&amp;#x2F;线程；并发&amp;#x2F;锁；内存管理与调度；I&amp;#x2F;O原理，本文也将围绕这几点逐渐深入。"><meta property="og:locale" content="zh_CN"><meta property="og:image" content="https://img-blog.csdnimg.cn/20201126232610447.png"><meta property="og:image" content="https://img-blog.csdnimg.cn/20201126232626302.png"><meta property="og:image" content="https://img-blog.csdnimg.cn/20201126232641901.png"><meta property="og:image" content="https://img-blog.csdnimg.cn/20201126232654243.png"><meta property="og:image" content="https://img-blog.csdnimg.cn/20201126232707590.png"><meta property="og:image" content="https://img-blog.csdnimg.cn/20201126232721561.png"><meta property="og:image" content="https://img-blog.csdnimg.cn/20201126232734531.png"><meta property="og:image" content="https://img-blog.csdnimg.cn/2020112623275172.png"><meta property="og:image" content="https://img-blog.csdnimg.cn/2020112623280233.png"><meta property="og:image" content="https://img-blog.csdnimg.cn/20201126232816178.png"><meta property="og:image" content="https://img-blog.csdnimg.cn/20201126232828125.png"><meta property="og:image" content="https://img-blog.csdnimg.cn/20201126232847958.png"><meta property="og:image" content="https://img-blog.csdnimg.cn/20201126232905979.png"><meta property="og:image" content="https://img-blog.csdnimg.cn/20201126232918873.png"><meta property="og:image" content="https://img-blog.csdnimg.cn/2020112623293669.png"><meta property="og:image" content="https://img-blog.csdnimg.cn/20201126232948328.png"><meta property="og:image" content="https://img-blog.csdnimg.cn/20201126233002261.png#pic_center"><meta property="og:image" content="https://img-blog.csdnimg.cn/20201126233012383.png"><meta property="og:image" content="https://img-blog.csdnimg.cn/20201126233111360.png"><meta property="og:image" content="https://img-blog.csdnimg.cn/20201126233122992.png"><meta property="og:image" content="https://img-blog.csdnimg.cn/20201126233141708.png"><meta property="og:image" content="https://img-blog.csdnimg.cn/20201126233205873.png"><meta property="og:image" content="https://img-blog.csdnimg.cn/20201126233217430.png"><meta property="og:image" content="https://img-blog.csdnimg.cn/20201126233230634.png"><meta property="og:image" content="https://img-blog.csdnimg.cn/20201126233242401.png"><meta property="og:image" content="https://img-blog.csdnimg.cn/20201126233252568.png"><meta property="og:image" content="https://img-blog.csdnimg.cn/20201126233305231.png"><meta property="og:image" content="https://img-blog.csdnimg.cn/20201126233318803.png"><meta property="og:image" content="https://img-blog.csdnimg.cn/20201126233330263.png"><meta property="og:image" content="https://img-blog.csdnimg.cn/20201126233340861.png#pic_center"><meta property="og:image" content="https://img-blog.csdnimg.cn/20201126233353823.png#pic_center"><meta property="og:image" content="https://img-blog.csdnimg.cn/20201126233408630.png"><meta property="og:image" content="https://img-blog.csdnimg.cn/20201126233424831.png"><meta property="og:image" content="https://img-blog.csdnimg.cn/20201126233436201.png"><meta property="og:image" content="https://img-blog.csdnimg.cn/20201126233449421.png"><meta property="og:image" content="https://img-blog.csdnimg.cn/2020112623350393.png"><meta property="og:image" content="https://img-blog.csdnimg.cn/20201126233512568.png"><meta property="og:image" content="https://img-blog.csdnimg.cn/20201126233520831.png"><meta property="og:image" content="https://img-blog.csdnimg.cn/20201126233529277.png"><meta property="og:image" content="https://img-blog.csdnimg.cn/20201126233540984.png"><meta property="og:image" content="https://img-blog.csdnimg.cn/20201126233553107.png"><meta property="og:image" content="https://img-blog.csdnimg.cn/20201126233604615.png"><meta property="og:image" content="https://img-blog.csdnimg.cn/20201126233617271.png"><meta property="og:image" content="https://img-blog.csdnimg.cn/20201126233628237.png"><meta property="og:image" content="https://img-blog.csdnimg.cn/20201126233640747.png"><meta property="og:image" content="https://img-blog.csdnimg.cn/2020112623365185.png"><meta property="og:image" content="https://img-blog.csdnimg.cn/20201126233659674.png"><meta property="og:image" content="https://img-blog.csdnimg.cn/20201126233707976.png"><meta property="og:image" content="https://img-blog.csdnimg.cn/20201126233715230.png"><meta property="og:image" content="https://img-blog.csdnimg.cn/20201126233722670.png"><meta property="og:image" content="https://img-blog.csdnimg.cn/20201126233729670.png#pic_center"><meta property="og:image" content="https://img-blog.csdnimg.cn/2020112623373766.png"><meta property="og:image" content="https://img-blog.csdnimg.cn/20201126233744577.png"><meta property="og:image" content="https://img-blog.csdnimg.cn/2020112623375160.png#pic_center"><meta property="og:image" content="https://img-blog.csdnimg.cn/20201126233800785.png"><meta property="og:image" content="https://img-blog.csdnimg.cn/20201126233812666.png"><meta property="og:image" content="https://img-blog.csdnimg.cn/2020112623382241.png"><meta property="article:published_time" content="2022-06-09T08:36:53.000Z"><meta property="article:modified_time" content="2022-11-12T08:13:47.963Z"><meta property="article:author" content="Jie"><meta property="twitter:card" content="summary"><meta property="twitter:image:src" content="https://img-blog.csdnimg.cn/20201126232610447.png"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","mainEntityOfPage":{"@type":"WebPage","@id":"http://nameless1732.github.io/Article/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%A4%8D%E4%B9%A0/"},"headline":"操作系统复习","image":["https://img-blog.csdnimg.cn/20201126232610447.png","https://img-blog.csdnimg.cn/20201126232626302.png","https://img-blog.csdnimg.cn/20201126232641901.png","https://img-blog.csdnimg.cn/20201126232654243.png","https://img-blog.csdnimg.cn/20201126232707590.png","https://img-blog.csdnimg.cn/20201126232721561.png","https://img-blog.csdnimg.cn/20201126232734531.png","https://img-blog.csdnimg.cn/2020112623275172.png","https://img-blog.csdnimg.cn/2020112623280233.png","https://img-blog.csdnimg.cn/20201126232816178.png","https://img-blog.csdnimg.cn/20201126232828125.png","https://img-blog.csdnimg.cn/20201126232847958.png","https://img-blog.csdnimg.cn/20201126232905979.png","https://img-blog.csdnimg.cn/20201126232918873.png","https://img-blog.csdnimg.cn/2020112623293669.png","https://img-blog.csdnimg.cn/20201126232948328.png","https://img-blog.csdnimg.cn/20201126233012383.png","https://img-blog.csdnimg.cn/20201126233111360.png","https://img-blog.csdnimg.cn/20201126233122992.png","https://img-blog.csdnimg.cn/20201126233141708.png","https://img-blog.csdnimg.cn/20201126233205873.png","https://img-blog.csdnimg.cn/20201126233217430.png","https://img-blog.csdnimg.cn/20201126233230634.png","https://img-blog.csdnimg.cn/20201126233242401.png","https://img-blog.csdnimg.cn/20201126233252568.png","https://img-blog.csdnimg.cn/20201126233305231.png","https://img-blog.csdnimg.cn/20201126233318803.png","https://img-blog.csdnimg.cn/20201126233330263.png","https://img-blog.csdnimg.cn/20201126233408630.png","https://img-blog.csdnimg.cn/20201126233424831.png","https://img-blog.csdnimg.cn/20201126233436201.png","https://img-blog.csdnimg.cn/20201126233449421.png","https://img-blog.csdnimg.cn/2020112623350393.png","https://img-blog.csdnimg.cn/20201126233512568.png","https://img-blog.csdnimg.cn/20201126233520831.png","https://img-blog.csdnimg.cn/20201126233529277.png","https://img-blog.csdnimg.cn/20201126233540984.png","https://img-blog.csdnimg.cn/20201126233553107.png","https://img-blog.csdnimg.cn/20201126233604615.png","https://img-blog.csdnimg.cn/20201126233617271.png","https://img-blog.csdnimg.cn/20201126233628237.png","https://img-blog.csdnimg.cn/20201126233640747.png","https://img-blog.csdnimg.cn/2020112623365185.png","https://img-blog.csdnimg.cn/20201126233659674.png","https://img-blog.csdnimg.cn/20201126233707976.png","https://img-blog.csdnimg.cn/20201126233715230.png","https://img-blog.csdnimg.cn/20201126233722670.png","https://img-blog.csdnimg.cn/2020112623373766.png","https://img-blog.csdnimg.cn/20201126233744577.png","https://img-blog.csdnimg.cn/20201126233800785.png","https://img-blog.csdnimg.cn/20201126233812666.png","https://img-blog.csdnimg.cn/2020112623382241.png"],"datePublished":"2022-06-09T08:36:53.000Z","dateModified":"2022-11-12T08:13:47.963Z","author":{"@type":"Person","name":"Jie"},"publisher":{"@type":"Organization","name":"Nameless1732","logo":{"@type":"ImageObject","url":"http://nameless1732.github.io/img/logo.svg"}},"description":"前言 本篇文章的内容结合了哈工大李治军老师操作系统课程，王道考研操作系统的资料以及学习了B站CodeSheep的一次知识梳理，并且为了便于理解学习，增加了个人的一些解释。总之，概括而言对于开发人员来说，操作系统需要下四个方面进行学习：进程&#x2F;线程；并发&#x2F;锁；内存管理与调度；I&#x2F;O原理，本文也将围绕这几点逐渐深入。"}</script><link rel="canonical" href="http://nameless1732.github.io/Article/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%A4%8D%E4%B9%A0/"><link rel="icon" href="/img/favicon.svg"><link rel="stylesheet" href="https://use.fontawesome.com/releases/v6.0.0/css/all.css"><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css"><link rel="stylesheet"><link rel="stylesheet" href="/css/default.css"><style>body>.footer,body>.navbar,body>.section{opacity:0}</style><!--!--><!--!--><!--!--><!--!--><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cookieconsent/3.1.1/cookieconsent.min.css"><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/lightgallery/1.10.0/css/lightgallery.min.css"><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/justifiedGallery/3.8.1/css/justifiedGallery.min.css"><!--!--><!--!--><style>.pace{-webkit-pointer-events:none;pointer-events:none;-webkit-user-select:none;-moz-user-select:none;user-select:none}.pace-inactive{display:none}.pace .pace-progress{background:#3273dc;position:fixed;z-index:2000;top:0;right:100%;width:100%;height:2px}</style><script src="https://cdnjs.cloudflare.com/ajax/libs/pace/1.2.4/pace.min.js"></script><!--!--><!--!--><!-- hexo injector head_end start --><script>
+  (function () {
+      function switchTab() {
+          if (!location.hash) {
+            return;
+          }
+
+          const $tabMenu = document.querySelector(`a[href="${location.hash}"]`);
+          if (!$tabMenu) {
+            return;
+          }
+
+          const $tabMenuContainer = $tabMenu.parentElement.parentElement;
+          Array.from($tabMenuContainer.children).forEach($menu => $menu.classList.remove('is-active'));
+          Array.from($tabMenuContainer.querySelectorAll('a'))
+              .map($menu => document.getElementById($menu.getAttribute("href").substring(1)))
+              .forEach($content => $content.classList.add('is-hidden'));
+
+          if ($tabMenu) {
+              $tabMenu.parentElement.classList.add('is-active');
+          }
+          const $activeTab = document.querySelector(location.hash);
+          if ($activeTab) {
+              $activeTab.classList.remove('is-hidden');
+          }
+      }
+      switchTab();
+      window.addEventListener('hashchange', switchTab, false);
+  })();
+  </script><!-- hexo injector head_end end --><meta name="generator" content="Hexo 6.3.0"></head><body class="is-3-column"><nav class="navbar navbar-main"><div class="container navbar-container"><div class="navbar-brand justify-content-center"><a class="navbar-item navbar-logo" href="/"><img src="/img/logo.svg" alt="Nameless1732" height="28"></a></div><div class="navbar-menu"><div class="navbar-start"><a class="navbar-item" href="/">主页</a><a class="navbar-item" href="/archives">文章</a><a class="navbar-item" href="/categories">分类</a><a class="navbar-item" href="/tags">标签</a><a class="navbar-item" href="/about">关于</a></div><div class="navbar-end"><a class="navbar-item" target="_blank" rel="noopener" title="Download on GitHub" href="https://github.com/Nameless1732"><i class="fab fa-github"></i></a><a class="navbar-item search" title="搜索" href="javascript:;"><i class="fas fa-search"></i></a></div></div></div></nav><section class="section"><div class="container"><div class="columns"><div class="column order-2 column-main is-8-tablet is-8-desktop is-6-widescreen"><div class="card"><article class="card-content article" role="article"><div class="article-meta is-size-7 is-uppercase level is-mobile"><div class="level-left"><span class="level-item"><time dateTime="2022-06-09T08:36:53.000Z" title="6/9/2022, 4:36:53 PM">2022-06-09</time>发表</span><span class="level-item"> Jie </span><span class="level-item"><a class="link-muted" href="/categories/%E6%9C%9F%E6%9C%AB%E5%A4%8D%E4%B9%A0/">期末复习</a></span><span class="level-item">1 小时读完 (大约11723个字)</span></div></div><h1 class="title is-3 is-size-4-mobile">操作系统复习</h1><div class="content"><h3 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h3><blockquote>
+<p>本篇文章的内容结合了哈工大李治军老师操作系统课程，王道考研操作系统的资料以及学习了B站CodeSheep的一次知识梳理，并且为了便于理解学习，增加了个人的一些解释。总之，概括而言对于开发人员来说，操作系统需要下四个方面进行学习：进程&#x2F;线程；并发&#x2F;锁；内存管理与调度；I&#x2F;O原理，本文也将围绕这几点逐渐深入。</p>
+</blockquote>
+<span id="more"></span>
+<h2 id="一、常用术语总结"><a href="#一、常用术语总结" class="headerlink" title="一、常用术语总结"></a>一、常用术语总结</h2><table>
+<thead>
+<tr>
+<th>名词</th>
+<th>概念</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>PCB</td>
+<td>进程控制块（PCB Process Control Block）,系统中存放、管理和控制进程信息的数据结构称为</td>
+</tr>
+<tr>
+<td>TCB</td>
+<td>线程控制块</td>
+</tr>
+<tr>
+<td>FCB</td>
+<td>文件控制块</td>
+</tr>
+<tr>
+<td>PID</td>
+<td>进程ID(Process ID)</td>
+</tr>
+<tr>
+<td>PSW</td>
+<td>程序状态字寄存器，用于存放PC、IR等的信息</td>
+</tr>
+<tr>
+<td>PC</td>
+<td>程序计数器，存放下一条指令地址</td>
+</tr>
+<tr>
+<td>IR</td>
+<td>指令寄存器，存放到当前进行的指令</td>
+</tr>
+<tr>
+<td>半双工</td>
+<td>半双工和全双工是计算机网络中的概念，意思是通讯同一时间只允许一方发送数据(对讲机)</td>
+</tr>
+<tr>
+<td>全双工</td>
+<td>通信允许两方向上同时传输数据(电话)</td>
+</tr>
+<tr>
+<td>P操作</td>
+<td>来自荷兰语proveren，代表wait原语，通常使用P(S)代替wait(S)</td>
+</tr>
+<tr>
+<td>V操作</td>
+<td>来自荷兰语verhogen，代表原语signal,通常使用V(S)代替signal(S)</td>
+</tr>
+<tr>
+<td>用户态</td>
+<td>一般的操作系统对执行权限进行分级，分别为用保护态和内核态。用户态相较于内核态有较低的执行权限，很多操作是不被操作系统允许的，从而保证操作系统和计算机的安全。</td>
+</tr>
+<tr>
+<td>内核态</td>
+<td>内核态相当于一个介于硬件与应用之间的层，可以进行硬件的调度、使用，可以执行任何cpu指令，也可以引用任何内存地址，包括外围设备, 例如硬盘,网卡，权限等级最高。</td>
+</tr>
+<tr>
+<td>用户态内核态切换</td>
+<td>三种情况下，用户态会转换到内核态，系统调用、程序异常(例如&#x2F;0，内存资源耗尽等)、来自外围设备的中断</td>
+</tr>
+<tr>
+<td>系统调用&#x2F;程序接口</td>
+<td>用户程序通过系统调用的方式才能对硬件进行使用，或者说操作系统将使用硬件的接口提供给用户程序</td>
+</tr>
+<tr>
+<td>中断</td>
+<td>中断是操作系统内核程序夺取cpu的唯一途径，或者说用户程序调用内核代码的唯一途径，因为在一般情况下，操作系统会将cpu使用权交给应用程序。</td>
+</tr>
+</tbody></table>
+<h2 id="二、进程、线程"><a href="#二、进程、线程" class="headerlink" title="二、进程、线程"></a>二、进程、线程</h2><p>在进程、线程这一章节除了会讲进程、线程的概念，也会穿插，并发，锁。</p>
+<h3 id="2-1-进程"><a href="#2-1-进程" class="headerlink" title="2.1 进程"></a>2.1 进程</h3><p>进程由PCB(进程控制块)组成,包含了PID、资源分配情况、进程运行情况。</p>
+<p>对用户而言，我们能看到 <strong>一个个PID</strong> ，而对操作系统而言，底层需要处理的是 <strong>一个个PCB</strong> 。</p>
+<p>下图是通过任务管理器的用户视角下的进程。</p>
+<p><img src="https://img-blog.csdnimg.cn/20201126232610447.png" alt="在这里插入图片描述"></p>
+<h4 id="2-1-1-进程控制"><a href="#2-1-1-进程控制" class="headerlink" title="2.1.1 进程控制"></a>2.1.1 进程控制</h4><p>进程控制相关的原语：<code>创建、终止、阻塞、唤醒、切换</code>。也就是说我们通过原语进行进程控制，原语的执行具有原子性，不允许被中断，原语的实现可以通过“关中断指令”和“开中断指令”实现。</p>
+<p>进程状态：<code>运行态，就绪态，阻塞态</code></p>
+<blockquote>
+<p>进程状态转换的条件：</p>
+<p>运行 -&gt; 阻塞 等待I&#x2F;O或事件完成</p>
+<p>运行 -&gt; 就绪 进程的CPU时间片用完</p>
+<p>就绪 -&gt; 运行 获得了CPU的时间片</p>
+<p>阻塞 -&gt; 就绪 I&#x2F;O或事件完成</p>
+</blockquote>
+<p>下图为进程控制的流程图。</p>
+<p><img src="https://img-blog.csdnimg.cn/20201126232626302.png" alt="在这里插入图片描述"></p>
+<h4 id="2-1-2-进程的组织形式"><a href="#2-1-2-进程的组织形式" class="headerlink" title="2.1.2 进程的组织形式"></a>2.1.2 进程的组织形式</h4><blockquote>
+<p>在一个系统中，通常有数十、数百乃至数千个PCB。为了能对他们加以有效的管理，应该用适当的方式把这些PCB组织起来。</p>
+</blockquote>
+<p>进程的组织形式分为两种：链接式和索引式</p>
+<p><img src="https://img-blog.csdnimg.cn/20201126232641901.png" alt="在这里插入图片描述"></p>
+<p>根据进程状态的不同，创建不同的索引表，可以通过指针可以通过索引表指到个PCB。</p>
+<p><img src="https://img-blog.csdnimg.cn/20201126232654243.png" alt="在这里插入图片描述"></p>
+<h4 id="2-1-3-程序的执行"><a href="#2-1-3-程序的执行" class="headerlink" title="2.1.3 程序的执行"></a><strong>2.1.3 程序的执行</strong></h4><p><img src="https://img-blog.csdnimg.cn/20201126232707590.png"></p>
+<blockquote>
+<p>程序的状态字寄存器<br>PSW用来存放两类信息：一类是体现当前指令执行结果的各种状态信息，如有无进位（CY位），有无溢出（OV位）等；另一类是存放控制信息，如允许中断(IF位)，跟踪标志（TF位）等。</p>
+</blockquote>
+<p><img src="https://img-blog.csdnimg.cn/20201126232721561.png"></p>
+<blockquote>
+<p>相较于程序，进程是动态的而程序是静态的</p>
+</blockquote>
+<h4 id="2-1-4-进程通信"><a href="#2-1-4-进程通信" class="headerlink" title="2.1.4 进程通信"></a>2.1.4 进程通信</h4><blockquote>
+<p>进程通信是指进程之间的信息交换。进程是分配系统资源的单位，因此各个进程拥有的内存地址相互独立，为了保证安全，一个进程不能直接访问另一个进程的地址空间，为了实现进程通信，操作系统提供了以下方法</p>
+</blockquote>
+<p>进程通信方法：<code>共享存储、信号量、消息队列/信箱、管道通信、套接字(这个在计算机网络有涉及相关知识，可以把套接字理解为一个窗口)</code></p>
+<p><strong>共享存储</strong></p>
+<p><img src="https://img-blog.csdnimg.cn/20201126232734531.png"></p>
+<p><strong>消息传递</strong></p>
+<p>通过原语控制，进程1发送消息到消息缓冲队列或者信箱中，进程2从消息队列或者信箱中接收消息。</p>
+<p><img src="https://img-blog.csdnimg.cn/2020112623275172.png"></p>
+<p><strong>管道通信</strong></p>
+<p><img src="https://img-blog.csdnimg.cn/2020112623280233.png"></p>
+<h3 id="2-2-线程"><a href="#2-2-线程" class="headerlink" title="2.2 线程"></a>2.2 线程</h3><blockquote>
+<p>进程是资源分配的基本单位，线程是调度的基本单位，往往一个进程包含多个线程。线程并发，系统开销小，不需要切换系统资源。</p>
+</blockquote>
+<p>线程可以分为用户级线程和内核级线程，早期如Unix只支持进程，不支持线程，所以当时的线程是由”线程库”实现的，用户将进程分为多个线程，放入线程库，但操作系统仍然是按照进程进行处理的。</p>
+<p>这种用户级线程是由程序负责管理的，包括进行切换。这种切换方式 <strong>开销小，效率高</strong> ，但下图当一个用户级线程被阻塞后，整个 <strong>进程都将会被阻塞</strong> 。</p>
+<p><img src="https://img-blog.csdnimg.cn/20201126232816178.png"></p>
+<p><strong>多线程模型</strong></p>
+<p>内核级线程是由操作系统完成调度的。</p>
+<p>将n个用户级线程映射到m个内核级线程上（ n &gt;&#x3D; m），优点是克服了多对一模型并发度不高的缺点，又克服了一对一模型中一个用户进程占用太多内<br>核级线程，开销太大的缺点。</p>
+<p><img src="https://img-blog.csdnimg.cn/20201126232828125.png"></p>
+<h3 id="2-3-进程调度"><a href="#2-3-进程调度" class="headerlink" title="2.3 进程调度"></a>2.3 进程调度</h3><h4 id="2-3-1-三种调度方式"><a href="#2-3-1-三种调度方式" class="headerlink" title="2.3.1 三种调度方式"></a>2.3.1 三种调度方式</h4><blockquote>
+<p>调度的产生是因为系统资源有限，没办法同时处理所有进程，需要特定的规则分配执行顺序，从而有了调度</p>
+</blockquote>
+<p>操作系统调度层次分为三类：高级调度、中级调度、低级调度。</p>
+<p>高级调度：从外存的后备作业中挑选一个(多个)，建立相应的PCB，获得竞争处理的权力。</p>
+<p>后面会讲到的虚拟内存技术出现后，为了提高系统的利用率和吞吐量，会将暂时等待的进程挂起到外存。</p>
+<p>中级调度：能够决定哪个被挂起的进程重新回到内存中。</p>
+<p>低级调度:从就绪队列中选取一个进程，使其能够被CPU处理。</p>
+<p>三种调度方式的频率从低到高。</p>
+<blockquote>
+<p>进程调度时机：当前运行进程主动放弃(进程中止、异常、主动请求阻塞)，被动放弃(时间片用完、更高优先级的进程进入就绪队列等)</p>
+</blockquote>
+<h4 id="2-3-2-调度算法评价指标"><a href="#2-3-2-调度算法评价指标" class="headerlink" title="2.3.2 调度算法评价指标"></a>2.3.2 调度算法评价指标</h4><blockquote>
+<p>作为开发人员的话，大致了解以下即可，毕竟工作中几乎不会涉及到具体指标计算</p>
+</blockquote>
+<p><code>CPU利用率</code> &#x3D; 忙碌的时间&#x2F;总时间</p>
+<p><code>系统吞吐量</code> &#x3D; 总共完成了多少道作业&#x2F;总共花了多少时间 (简单理解就是一个完成作业的速度指标)</p>
+<p><code>周转时间</code>&#x3D; 作业完成时间– 作业提交时间</p>
+<p><code>平均周转时间</code> &#x3D; 各作业周转时间之和&#x2F;作业数</p>
+<p><code>带权周转时间</code> &#x3D; (作业完成时间– 作业提交时间)&#x2F;作业实际运行的时间,这项指标一定是大于等于1的，越接近一则越好</p>
+<p><code>平均带权周转时间</code> &#x3D; 各作业带权周转时间之和&#x2F;作业数</p>
+<p><code>等待时间</code>，指进程&#x2F;作业处于等待处理机状态时间之和</p>
+<p><code>响应时间</code>，指从用户提交请求到首次产生响应所用的时间。例如键盘事件响应时间，鼠标点击响应时间</p>
+<h4 id="2-3-3-【重点】调度算法"><a href="#2-3-3-【重点】调度算法" class="headerlink" title="2.3.3 【重点】调度算法"></a>2.3.3 【重点】调度算法</h4><p><code>先来先服务FCFS</code>：顾名思义，先来的进程先服务，主要从“公平”的角度考虑（类似于我们生活中排队买东西的例子）,非抢占式算法。</p>
+<p><code>短作业优先SJF</code>：最短的作业&#x2F;进程优先得到服务，追求最少的平均等待时间，非抢占式算法。</p>
+<p><img src="https://img-blog.csdnimg.cn/20201126232847958.png"></p>
+<p><code>最短剩余时间优先算法SRTN</code>：每当有进程加入就绪队列改变时就需要调度，如果新到达的进程剩余时间比当前运行的进程剩余时间更短，则由新进程抢占处理机，当前运行进程重新回到就绪队列。是一种抢占式算法。</p>
+<p><img src="https://img-blog.csdnimg.cn/20201126232905979.png"></p>
+<blockquote>
+<p>根据图示要区分最短剩余时间优先算法和短作业优先算法。</p>
+</blockquote>
+<p><code>高响应比优先HRRN</code>，相应比 &#x3D; （等待时间+要求服务时间）&#x2F;要求服务时间</p>
+<p>，是一种非抢占式的调度算法，只有当前运行的进程主动放弃CPU时（正常&#x2F;异常完成，或主动阻塞），才需要进行调度。</p>
+<p>以上方法适用于早期的批到处理系统，适用于交互式系统的调度算法。</p>
+<p>适用于目前交互式系统的调度算法，在交互式操作系统中，可以将任务划分为前台任务(鼠标、键盘等任务)和后台任务，前台任务更关心响应事件，后台任务</p>
+<p><code>时间片轮转调度算法RR</code>：周期性切换PCB，各个PCB轮流使用CPU</p>
+<p><img src="https://img-blog.csdnimg.cn/20201126232918873.png"></p>
+<p><code>最高优先级调度算法</code>即前台进程优先级高于后台进程，系统进程优先级会高于用户进程，特点就是不公平，容易产生饥饿。</p>
+<blockquote>
+<p>1973年关闭的MIT的IBM 7094时，发现有一个进程在1967年提交但一直未运行</p>
+</blockquote>
+<h3 id="2-4-实现进程互斥、同步、前驱"><a href="#2-4-实现进程互斥、同步、前驱" class="headerlink" title="2.4 实现进程互斥、同步、前驱"></a>2.4 实现进程互斥、同步、前驱</h3><p>如果要清晰讲述需要了解代码逻辑，对于非专业人员来说，必要性不大，这里就不详细罗列代码了。</p>
+<h4 id="2-4-1-硬件实现进程互斥"><a href="#2-4-1-硬件实现进程互斥" class="headerlink" title="2.4.1 硬件实现进程互斥"></a>2.4.1 硬件实现进程互斥</h4><p>进程互斥：当一个进程进入临界区后，另一个进程必须等待。</p>
+<p>硬件能够实现进程互斥，有三种方式： <strong>利用“开&#x2F;关中断指令”实现</strong> 、 <strong>TSL指令</strong> 、 <strong>SWAP指令</strong> 。</p>
+<h4 id="2-4-2-信号量机制实现互斥、同步、前驱"><a href="#2-4-2-信号量机制实现互斥、同步、前驱" class="headerlink" title="2.4.2 信号量机制实现互斥、同步、前驱"></a>2.4.2 信号量机制实现互斥、同步、前驱</h4><p>信号量机制：用户进程可以通过使用操作系统提供的原语对信号量进行操作，从而很方便的实现进程的互斥、同步、前驱。</p>
+<blockquote>
+<p>不要一头钻到代码里，要注意理解信号量背后的含义，一个信号量对应一种资源<br> 信，在操作系统中，信号量在源码中其实就对应着一个变量，代表着某种资源的数量，通过信号量可以实现进程互斥、同步、前驱。</p>
+</blockquote>
+<p>进程同步的理解：<code>要让各并发进程按要求有序地推进</code>。若PCB2 的“代码4”要基于PCB1<br>的“代码1”和“代码2”的运行结果才能执行，那么我们就必须保证“代码4”一定是在“代码2”之后才会执行。</p>
+<p>前驱的理解：其实每一对前驱关系都是一个进程同步问题（需要保证一前一后的操作）</p>
+<p><img src="https://img-blog.csdnimg.cn/2020112623293669.png"></p>
+<p>信号量保护：共享数据在没有保护的情况下，会出现安全问题，所以需要锁来进行保护，锁本质也是一个变量，用来保护信号量安全，那锁本身的安全谁来保护？我们不能在这里套娃对不对，所以锁是一种硬件原子指令，当要进入临界区时，上锁，离开临界区时解锁。下面的知识有一些扩展了。</p>
+<blockquote>
+<p>在cpu芯片上有一个HLOCK Pin，可以通过发送指令来操作，将#HLOCK<br>Pin电位拉低，并持续到这条指令执行完毕，从而将总线锁住，这样同一总线上的其他CPU就不能通过总线来访问内存了。最开始这些功能是用来测试cpu的，后来被操作系统实现而封装成各种功能：关键代码段，信号量等。</p>
+</blockquote>
+<h3 id="2-5-死锁的概念与处理"><a href="#2-5-死锁的概念与处理" class="headerlink" title="2.5 死锁的概念与处理"></a>2.5 死锁的概念与处理</h3><p><code>死锁的4个条件</code>，缺一不可</p>
+<ul>
+<li><p>互斥条件：对必须互斥使用的资源的争抢才会导致死锁</p>
+</li>
+<li><p>不剥夺条件：进程所获得的资源未使用完之前，不能被其他进程强行夺走，只能主动释放。</p>
+</li>
+<li><p>请求和保持条件：进程已经保持了至少一个资源，但又提出了新的资源请求，而该资源又被其他进程占有，此时请求进程被阻塞，但又对自己有的资源保持不放。就像很窄的桥，两个人都要去对面，但谁又都无法让出位置来</p>
+</li>
+<li><p>循环等待条件：存在一种进程资源的循环等待，链中的每一个进程已获得的资源同时被下一个进程所请求。想象有一个闭环，闭环上每个人都需要下一个人手上的某个资源，那么所有人都没办法满足</p>
+</li>
+</ul>
+<p>下图就像我们的一个死锁</p>
+<p><img src="https://img-blog.csdnimg.cn/20201126232948328.png"></p>
+<p><code>死锁的处理方式</code>：</p>
+<ul>
+<li><p>死锁预防</p>
+<ul>
+<li><p>破坏互斥条件(创建一个队列，所有的请求都会被快速响应，然后队列逐渐将请求发送到处理器进行整理)</p>
+</li>
+<li><p>破坏不剥夺条件(进程的某个资源得不到满足时，就必须立刻释放所持有的资源)</p>
+</li>
+<li><p>破坏请求和保持条件(静态分配，进程在运行前就一次性申请全部的资源，不满足就不让允许，就像过桥时保证桥上没人才让通行，否则禁止通行)</p>
+</li>
+<li><p>破坏循环等待条件(资源编号，进程必须按照编号递增的顺序请求资源,这样就不会出现持有大资源请求小资源的情况，也就不会有循环的等待)</p>
+</li>
+</ul>
+</li>
+</ul>
+<p>(方式较多，这里简单列举一些案例)</p>
+<ul>
+<li>死锁避免</li>
+</ul>
+<blockquote>
+<p>银行家算法：进程提出资源申请时，先判断这次分配会不会导致系统进入不安全状态，如果会则不答应请求，让该进程阻塞。简而言之，请求不能大于手中的资源。这种算法也叫银行家算法。</p>
+</blockquote>
+<ul>
+<li>死锁检测与恢复</li>
+</ul>
+<p>检测方法通过死锁检测算法，下面以图的方式说明</p>
+<p><img src="https://img-blog.csdnimg.cn/20201126233002261.png#pic_center"><br>能够消除所有边，就不会发生死锁如下图</p>
+<p><img src="https://img-blog.csdnimg.cn/20201126233012383.png"><br>不能消除所有边就会发生死锁</p>
+<p><strong>死锁恢复：</strong>资源剥夺将死锁的进程挂起，释放资源；撤销进程，直接将部分或者全部死锁进程撤销；进程回退，让进程回退的足以避免死锁的地方。</p>
+<ul>
+<li>死锁忽略</li>
+</ul>
+<p>顾名思义，忽略这个死锁，死锁概率本不高，就算出现了也只是局部的死锁，直接不管反而能提高资源利用率与整体运行的速度，也有个好听的名字叫鸵鸟算法，这样性能会提升不少，大部分操作系统也采用死锁忽略的策略。</p>
+<h2 id="三、内存"><a href="#三、内存" class="headerlink" title="三、内存"></a>三、内存</h2><p>内存：程序执行前要先放到内存中才能被CPU处理。计算机小白可能以为内存就是存储空间，其实不然。</p>
+<p>地址：4G的内存空间，有4*230个字节，也就是232个字节，要表示全部的字节就需要 <strong>32位的二进制地址</strong><br>，这也就是我们以前流行的32位操作系统的由来。但目前内存基本上都是8G，16G，所以32位已经不能满足需求，当前主流是 <strong>64位操作系统</strong><br>，能表示2^64个字节，最高4,294,967,296G的内存空间，远远满足当前的任何个人电脑地址表达需求。</p>
+<h3 id="3-1-程序装入内存"><a href="#3-1-程序装入内存" class="headerlink" title="3.1 程序装入内存"></a>3.1 程序装入内存</h3><blockquote>
+<p>可执行文件需要放在内存中才可以运行，程序中的指令是逻辑地址，而内存中的地址是物理地址。如何将逻辑地址转为物理地址？</p>
+</blockquote>
+<ol>
+<li>绝对装入</li>
+</ol>
+<p>下图为可执行文件指令。</p>
+<p><img src="https://img-blog.csdnimg.cn/20201126233111360.png"></p>
+<p>假如0-100的地址已经被占用，系统知道装入模块要从地址为100 的地方开始存放，编译时就将指令的绝对地址载入了可执行文件，即</p>
+<p><img src="https://img-blog.csdnimg.cn/20201126233122992.png"></p>
+<ol start="2">
+<li>静态重定位</li>
+</ol>
+<p>编译、链接后的装入模块的地址都是从0开始的，即可执行文件指令地址不变，在装入内存时，逻辑地址全部+100，装入内存中。所以作业一旦装入就没办法再更改、申请内存空间。</p>
+<ol start="3">
+<li>动态重定位</li>
+</ol>
+<p>又称动态运行时装入。编译、链接后的装入模块的地址都是从0开始的。装入程序把装入模块装入内存后，并不会立即把逻辑地址转换为物理地址，而是把地址转换推迟到<br><strong>程序真正要执行时才进行</strong> 。</p>
+<p><strong>这种方式需要一个重定位寄存器的支持</strong> ，寄存器记录了初始进入的的地址即100，在程序运行时，会动态的将指令中的逻辑地址增加上初始地址。</p>
+<p><img src="https://img-blog.csdnimg.cn/20201126233141708.png"></p>
+<h3 id="3-2-链接方式"><a href="#3-2-链接方式" class="headerlink" title="3.2 链接方式"></a>3.2 链接方式</h3><ol>
+<li>静态链接</li>
+</ol>
+<blockquote>
+<p>在程序运行之前，先将各目标模块及它们所需的库函数连接成一个完整的可执行文件（装入模块），之后不再拆开。</p>
+</blockquote>
+<p><img src="https://img-blog.csdnimg.cn/20201126233205873.png"></p>
+<ol start="2">
+<li>装入时动态链接</li>
+</ol>
+<blockquote>
+<p>装入时动态链接：将各目标模块装入内存时，边装入边链接的链接方式。</p>
+</blockquote>
+<p><img src="https://img-blog.csdnimg.cn/20201126233217430.png"></p>
+<ol start="3">
+<li>运行时动态链接</li>
+</ol>
+<blockquote>
+<p>在程序执行中需要该目标模块时，才对它进行链接。其优点是物理地址便于修改和更新，便于实现对目标模块的共享。</p>
+</blockquote>
+<p><img src="https://img-blog.csdnimg.cn/20201126233230634.png"></p>
+<h3 id="3-3-内存管理"><a href="#3-3-内存管理" class="headerlink" title="3.3 内存管理"></a>3.3 内存管理</h3><p>操作系统需要负责内存空间的分配与回收、内存空间扩充、地址转换、内存保护。</p>
+<ol>
+<li><strong>分配与回收</strong></li>
+</ol>
+<p>分配在程序链接方式已经讲明白了，回收即对内存中的进程进行撤销、挂起等操作。</p>
+<ol start="2">
+<li><strong>扩充</strong></li>
+</ol>
+<p>这会涉及到后面的虚拟内存技术，这也十分常见，比方说我们5G的程序如何运行在2G的内存上，这就需要扩充。</p>
+<ol start="3">
+<li><strong>地址转换</strong></li>
+</ol>
+<p>在装入内存已经讲过。</p>
+<ol start="4">
+<li><strong>内存保护</strong></li>
+</ol>
+<p>简单来说就是操作系统保护已经在内存上的进程不被干扰。一种方式是设置上下限寄存器存放进程上下界，如100-179被占用，其他进程不可使用这里的内存。另外一种方式是重定位寄存器与界地址寄存器，如下图</p>
+<p><img src="https://img-blog.csdnimg.cn/20201126233242401.png"></p>
+<p>通过逻辑判断内存是否能执行某操作。</p>
+<h3 id="3-4-覆盖技术与交换技术"><a href="#3-4-覆盖技术与交换技术" class="headerlink" title="3.4 覆盖技术与交换技术"></a>3.4 覆盖技术与交换技术</h3><p>技术产生的原因：程序所需的运行空间大于实际内存大小，需要让内存发挥出更大的作用。</p>
+<p>覆盖技术：按照逻辑，将不可能同时被访问的程序段共享一个覆盖区</p>
+<p><img src="https://img-blog.csdnimg.cn/20201126233252568.png"></p>
+<p>交换技术:内存紧张时，将部分进程暂时挂起(放置到外村)，将外村已具备运行条件的进程换入内存。</p>
+<h3 id="3-5-连续分配管理方式"><a href="#3-5-连续分配管理方式" class="headerlink" title="3.5 连续分配管理方式"></a>3.5 连续分配管理方式</h3><p>单一连续分配：用于早期操作系统，内存被划分为系统区和用户区，内存只能有一道用户程序，局限性不言而喻。</p>
+<p>固定分区分配：整个用户空间划分为若干个固定大小的分区，在每个分区中只装入一道作业。</p>
+<p><img src="https://img-blog.csdnimg.cn/20201126233305231.png"></p>
+<p>动态分区分配:不会预先划分内存分区，而是在进程装入内存时，根据进程的大小动态地建立分区。</p>
+<p><img src="https://img-blog.csdnimg.cn/20201126233318803.png"></p>
+<p>动态分区分配会产生 <strong>外部碎片</strong> ，外部碎片，是指内存中的某些空闲分区由于太小而难以利用。</p>
+<h3 id="3-6-动态分区分配算法"><a href="#3-6-动态分区分配算法" class="headerlink" title="3.6 动态分区分配算法"></a>3.6 动态分区分配算法</h3><ul>
+<li>首次适应算法</li>
+</ul>
+<blockquote>
+<p>每次都从低地址开始查找，找到第一个能满足大小的空闲分区</p>
+</blockquote>
+<ul>
+<li>最佳适应算法</li>
+</ul>
+<blockquote>
+<p>因此为了保证当“大进程”到来时能有连续的大片空间，可以尽可能多地留下大片的空闲区，即，优先使用更小的空闲区。</p>
+</blockquote>
+<ul>
+<li>最坏适应算法</li>
+</ul>
+<blockquote>
+<p>为了解决最佳适应算法的问题——即留下太多难以利用的小碎片，可以在每次分配时优先使用最大的连续空闲区，这样分配后剩余的空闲区就不会太小，更方便使用。</p>
+</blockquote>
+<ul>
+<li>邻近适应算法</li>
+</ul>
+<blockquote>
+<p>首次适应算法每次都从链头开始查找的。这可能会导致低地址部分出现很多小的空闲分区，而每次分配查找时，都要经过这些分区，因此也增加了查找的开销。如果每次都从上次查找结束的位置开始检索，就能解决上述问题。</p>
+</blockquote>
+<p><strong>综合来看</strong></p>
+<p><img src="https://img-blog.csdnimg.cn/20201126233330263.png"></p>
+<h3 id="3-7-基本分页存储管理"><a href="#3-7-基本分页存储管理" class="headerlink" title="3.7 基本分页存储管理"></a>3.7 基本分页存储管理</h3><p>在3.6中的算法总是存在种种问题，在实际操作系统中，分页可以解决内存分区导致的效率、碎片问题。</p>
+<p><strong>图示</strong></p>
+<p><img src="https://img-blog.csdnimg.cn/20201126233340861.png#pic_center"></p>
+<p>页框: 每个分区就是一个“页框”（页框&#x3D;页帧&#x3D;内存块&#x3D;物理块&#x3D;物理页面）</p>
+<p>页面:将进程的逻辑地址空间也分为与页框大小相等的一个个部分，每个部分称为一个“页”或“页面”</p>
+<blockquote>
+<p>页框不能太大，否则可能产生过大的内部碎片导致浪费。</p>
+</blockquote>
+<p>页框和页面总是记混，技巧其实很简单只要记住页面放在页框中，就再也不会记混了。</p>
+<p>页表:操作系统要为每个进程建立一张页表。页表通常存在PCB,这里概念不清的话可能会有疑惑为什么PCB中会有页表，仔细阅读前面的部分，PCB中不光存放进程，还存放着进程信息、PID、IO情况等多个内容。</p>
+<p>页表记录进程页面和实际存放的内存块之间的映射关系</p>
+<p><img src="https://img-blog.csdnimg.cn/20201126233353823.png#pic_center"></p>
+<p>页表项所占字节：假设某系统物理内存大小为4GB，页面大小为4KB，则有2^32 &#x2F; 2^12 &#x3D; 2^20<br>个内存块，那么每一个块号就需要20bit,至少3字节来表示。由于页号是隐含的，因此每个页表项占3B。</p>
+<p>同样的，有进程和内存，就有地址转换的问题进程的页号是<code>逻辑地址</code>，内存的页框号是<code>物理地址</code>，中间需要计算页内偏移量。</p>
+<ul>
+<li><p>页号&#x3D; 逻辑地址&#x2F; 页面长度（取除法的整数部分）</p>
+</li>
+<li><p>页内偏移量&#x3D; 逻辑地址% 页面长度（取除法的余数部分）</p>
+</li>
+</ul>
+<blockquote>
+<p>逻辑地址A 对应的物理地址&#x3D; P号页面在内存中的起始地址+页内偏移量W</p>
+</blockquote>
+<h3 id="3-8-具有快表的地址变换机构"><a href="#3-8-具有快表的地址变换机构" class="headerlink" title="3.8 具有快表的地址变换机构"></a>3.8 具有快表的地址变换机构</h3><p>快表TLB：又称联想寄存器，是访问速度比内存快很多的高速缓存。</p>
+<p><img src="https://img-blog.csdnimg.cn/20201126233408630.png"></p>
+<p>快表为什么速度快：直接从快表中取出该页对应的内存块号，再将内存块号与页内偏移量拼接形成物理地址最后，访问该物理地址对应的内存单元。因此，若快表命中，则访问某个逻辑地址仅需一次访存即可。</p>
+<p>慢表则要在多级页表中找到对应的页表，再从相应的页号中取出内存块号。</p>
+<p>就像看一本书，快表放了书签，而慢表则要慢慢找上次看到了哪</p>
+<blockquote>
+<p>局部性原理：</p>
+<p>时间局部性：如果执行了程序中的某条指令，那么不久后这条指令很有可能再次执行；如果某个数据被访问过，不久之后该数据很可能再次被访问。（因为程序中存在大量的循环）<br> 空间局部性：一旦程序访问了某个存储单元，在不久之后，其附近的存储单元也很有可能被访问。（因为很多数据在内存中都是连续存放的）</p>
+</blockquote>
+<h3 id="3-9-两级页表"><a href="#3-9-两级页表" class="headerlink" title="3.9 两级页表"></a>3.9 两级页表</h3><p>为什么要有两级页表</p>
+<blockquote>
+<p>根据局部性原理，进程某个时间段内只需要访问几个页面就可以正常运行了，没必要让整个页面都在内存中常驻。同时，过大的页表还会占用很多页框，也就是内存空间。</p>
+</blockquote>
+<p>示意图：</p>
+<p><img src="https://img-blog.csdnimg.cn/20201126233424831.png"></p>
+<p>当整个页表被分为多个页表，在内存中只需要放入有需求的页表，从而提高效率，节省空间。</p>
+<h3 id="3-10-基本分段管理"><a href="#3-10-基本分段管理" class="headerlink" title="3.10 基本分段管理"></a>3.10 基本分段管理</h3><blockquote>
+<p>分段管理：以段为单位进行分配，每个段在内存中占据连续空间，各段之间可以不相邻。大体上与分页类似，与“分页”最大的区别就是——离散分配时所分配地址空间的基本单位不同。</p>
+</blockquote>
+<h3 id="3-11-虚拟内存"><a href="#3-11-虚拟内存" class="headerlink" title="3.11 虚拟内存"></a>3.11 虚拟内存</h3><p>在真实的操作系统中，通常采用段页式存储管理，段面向用户，页面向硬件。</p>
+<p><img src="https://img-blog.csdnimg.cn/20201126233436201.png"></p>
+<p>虚拟内存解决的问题：</p>
+<ul>
+<li><p>一次性：作业必须一次性全部装入内存后才能开始运行。这会造成两个问题：①作业很大时，不能全部装入内存，导致 <strong>大作业无法运行</strong> ；②当大量作业要求运行时，由于内存 <strong>无法容纳所有作业</strong> ，因此只有少量作业能运行，导致多道程序并发度下降。</p>
+</li>
+<li><p>驻留性：一旦作业被装入内存，就会一直驻留在内存中，直至作业运行结束。事实上，在一个时间段内，只需要访问作业的一小部分数据即可正常运行，这就导致了内存中会驻留大量的、暂时用不到的数据， <strong>浪费了宝贵的内存资源。</strong></p>
+</li>
+</ul>
+<p>虚拟内存的实现：</p>
+<ul>
+<li><p>基于局部性原理，在程序装入时，可以将程序中很快会用到的部分装入内存，暂时用不到的部分 <strong>留在外存</strong> ，就可以让程序开始执行。</p>
+</li>
+<li><p>在程序执行过程中，当所访问的信息不在内存时，由操作系统负责将所需信息从 <strong>外存调入内存</strong> ，然后继续执行程序。</p>
+</li>
+<li><p>若内存空间不够，由操作系统负责将内存中暂时用不到的信息换出到外存。在操作系统的管理下，在用户看来似乎有一个比实际内存大得多的内存，这就是 <strong>虚拟内存</strong> 。</p>
+</li>
+</ul>
+<h3 id="3-12-请求分页管理"><a href="#3-12-请求分页管理" class="headerlink" title="3.12 请求分页管理"></a>3.12 请求分页管理</h3><p>请求分页管理：</p>
+<blockquote>
+<p>在程序执行过程中，当所访问的信息不在内存时，由操作系统负责将所需信息从外存调入内存，然后继续执行程序。若内存空间不够，由操作系统负责将内存中暂时用不到的信息换出到外存</p>
+</blockquote>
+<p>缺页中断： 在请求分页系统中，每当要访问的页面不在内存时，便产生一个缺页中断，然后由操作系统的缺页中断处理程序处理中断。</p>
+<p>缺页的进程阻塞，放入阻塞队列，调页完成后再将其唤醒，放回就绪队列。如果内存中有空闲块，则为进程分配一个空闲块，将所缺页面装入该块，并修改页表中相应的页表项。如果内存中没有空闲块，则由<br><strong>页面置换算法</strong> 选择一个页面淘汰，同时要注意，若某个页面被换出外存，则 <strong>快表</strong> 中的相应表项也要删除，否则可能访问错误的页面</p>
+<p><strong>理解缺页</strong> ，缺页就像货架上缺少了商品，需要从仓库里调取商品，就先暂停这个货架的销售，等商品调取完毕再重新出售。</p>
+<h3 id="3-13-页面置换算法"><a href="#3-13-页面置换算法" class="headerlink" title="3.13 页面置换算法"></a>3.13 页面置换算法</h3><p>置换算法的评价指标是：缺页的次数，某种算法让缺页次数最低，调度效率最高，那就是最优的算法</p>
+<ol>
+<li>最佳置换算法</li>
+</ol>
+<p>每次淘汰的页面都是以后永久不用或最长时间不使用的页面，保证最低的缺页率。 <strong>显然，这种需要预测未来的算法不可能实现。</strong></p>
+<ol start="2">
+<li>先进先出算法FIFO</li>
+</ol>
+<p>缺页时，淘汰最早进入的页面。算法简单，但局限性也明显，例如某些经常使用的页面一直被换进换出，和使用频率低的页面有相同的被换出的机会。</p>
+<ol start="3">
+<li>最近最久未使用置换算法LRU</li>
+</ol>
+<p>每次淘汰的页面都是最近最久未使用的页面。需要在页面中添加一个记录项，记录上次被访问以来经历的时间t，当需要淘汰页面时，选择时间t最大的淘汰，也就是最久未使用的淘汰。<br><strong>算法设计虽好，但开销很大，实现困难。</strong></p>
+<ol start="4">
+<li>时钟置换算法</li>
+</ol>
+<p>时钟置换算法也可以称为最近未使用算法。 <strong>是一种性能和开销均衡的算法。</strong></p>
+<p>简单的时钟算法实现方法:为每个页面设置一个访问位，再将内存中的页面都通过链接指针链接成一个循环队列。当某页被访问时，其访问位置为1。当需要淘汰一个页面时，只需检查页的访问位。如果是0，就选择该页换出;如果是1，则将它置为0，暂不换出，继续检查下一个页面，若第一轮扫描中所有页面都是1，则将这些页面的访问位依次置为0后，<br><strong>再进行第二轮扫描</strong> （第二轮扫描中一定会有访问位为0的页面，因此简单的CLOCK算法选择一个淘汰页面最多会经过两轮扫描)</p>
+<p>如下图。</p>
+<p><img src="https://img-blog.csdnimg.cn/20201126233449421.png"></p>
+<p><strong>了解即可</strong></p>
+<blockquote>
+<p>问题：缺页很少，访问位都是一，那么扫描了一轮进行第二次扫描，就相当于FIFO算法，为了改进这种情况，提出了下面的算法。</p>
+<p>改进版的时钟算法(有很多改进方式，这里只是一种)：如果把页面看成钟表，原来的慢指针相当于<code>时针</code>，现在添加一个<code>快指针</code>，相当于<code>分针</code>，分针扫描要比时针快，如果一个页面在一定时间限制内没有访问，就设访问位为0，缺页时直接换出。</p>
+</blockquote>
+<h2 id="四、I-x2F-O原理"><a href="#四、I-x2F-O原理" class="headerlink" title="四、I&#x2F;O原理"></a>四、I&#x2F;O原理</h2><blockquote>
+<p>注意文件索引和文件目录结构的区别，索引是检索文件的方式，而文件目录结构是用户管理计算机文件的一种结构，单级目录、多级目录等等。在用户目录的基础上，文件控制块FCB会指向对应的索引块。</p>
+</blockquote>
+<h3 id="4-1-文件的逻辑结构-【了解即可】"><a href="#4-1-文件的逻辑结构-【了解即可】" class="headerlink" title="4.1 文件的逻辑结构 【了解即可】"></a>4.1 文件的逻辑结构 【了解即可】</h3><p>文件可以分为两类：</p>
+<blockquote>
+<ol>
+<li>无结构文件</li>
+</ol>
+</blockquote>
+<blockquote>
+<p>文件内部数据就是一系列二进制流或字符流。最典型的就是txt文件。</p>
+<ol start="2">
+<li>有结构文件</li>
+</ol>
+</blockquote>
+<blockquote>
+<p>由一组相似的记录组成，又称记录式文件。典型的excel表、数据库表等。</p>
+</blockquote>
+<p>有结构文件的逻辑结构又分<code>顺序文件</code>、<code>索引文件</code>、<code>索引顺序文件</code>，注意逻辑结构是展示给用户的，是文件的组织形式，例如是一张顺序存储的excel表格，还是一张excel索引表加上excel顺序表，还是多级索引加顺序，而不是在计算机上的存储方式。</p>
+<p>顺序文件：文件中的记录一个接一个地顺序排列（逻辑上），记录可以是定长的或可变长的。各个记录在物理上可以顺序存储或链式存储。</p>
+<blockquote>
+<p>顺序存储即逻辑相邻的文件物理上也相邻，链式存储即在末尾添加新的文件。</p>
+</blockquote>
+<p>记录的类型又分为可变长和不可变长记录：</p>
+<p><img src="https://img-blog.csdnimg.cn/2020112623350393.png"></p>
+<p><strong>问题</strong> ：对于可变长记录文件，要找到第i 个记录，必须先顺序第查找前 i - 1 个记录，但是很多应用场景中又必须使用可变长记录。如何解决这个问题？</p>
+<p>之后提出了索引文件:简单而言就是引入了索引表的文件。索引表本身是顺序文件，即索引表顺序存储在一起。</p>
+<p><img src="https://img-blog.csdnimg.cn/20201126233512568.png"></p>
+<p><strong>问题</strong><br>：：每个记录对应一个索引表项，因此索引表可能会很大。比如：文件的每个记录平均只占8B，而每个索引表项占32个字节，那么索引表都要比文件内容本身大4倍，这样对存储空间的利用率就太低了。</p>
+<p>索引顺序文件：索引顺序文件是索引文件和顺序文件思想的结合。索引顺序文件中，同样会为文件建立一张索引表，但不同的是：并不是每个记录对应一个索引表项，而是一组记录对应一个索引表项，索引表项的地址直接指向顺序文件所在区域，再顺序查找到所需的文件，从而节省了很大的空间。(例如我们可以通过An<br>Qi找到An Kang、An Jie等，而不用在索引表中存放这么多信息。另外索引项之间不需要有按照逻辑关系排列)</p>
+<p><img src="https://img-blog.csdnimg.cn/20201126233520831.png"></p>
+<p>多级索引顺序文件：在索引顺序文件的基础上再增加层次深度，可以减少查找的次数(顺序查找范围缩小了)</p>
+<p><img src="https://img-blog.csdnimg.cn/20201126233529277.png"></p>
+<h3 id="4-2-文件目录"><a href="#4-2-文件目录" class="headerlink" title="4.2 文件目录"></a>4.2 文件目录</h3><p>文件目录可以分为：<code>单级目录结构</code>、<code>两级目录结构</code>、<code>多级目录结构(树形目录结构)</code></p>
+<p>单极目录结构：顾名思义，所有的文件放在一个目录中，类似于一个仓库把所有文件不加整理的堆放在一起，显然效率会很低下。</p>
+<p>两级目录结构:主要分为主文件目录和用户文件目录。类似于仓库中加了几个员工货架，不同员工的货物放在不同货架，但在一个货架中文件还是采用堆砌式的存储。</p>
+<p><img src="https://img-blog.csdnimg.cn/20201126233540984.png"></p>
+<p>多级目录结构，又称树形目录结构:我们当前主流操作系统都是多级目录结构，简而言之就是文件目录可以一级一级的延申，从而文件更有条理。</p>
+<p>FCB(文件控制块)，首先来看一张图，如果文件目录都以这种表的形式进行信息查找，会大大降低运行效率，增加系统负担。</p>
+<p><img src="https://img-blog.csdnimg.cn/20201126233553107.png"></p>
+<blockquote>
+<p>提出对策，其实在查找各级目录的过程中，只需要用到文件名这个信息，可以考虑让目录表瘦身来提升效率。</p>
+</blockquote>
+<p><img src="https://img-blog.csdnimg.cn/20201126233604615.png"></p>
+<p>索引结点指针指向索引结点(文件名之外的其他信息就存放在结点中，从而按需读取，提升效率)</p>
+<p><strong>FCB</strong></p>
+<p><img src="https://img-blog.csdnimg.cn/20201126233617271.png"></p>
+<p>每一个文件都有一个FCB，记录了文件的地址、信息、权限等等属性</p>
+<h3 id="4-3-文件的物理结构【重要】"><a href="#4-3-文件的物理结构【重要】" class="headerlink" title="4.3 文件的物理结构【重要】"></a>4.3 文件的物理结构【重要】</h3><p>最重要的三种物理结构：顺序、链接、索引，其中最主要使用的是索引文件，可以随机访问，同时增删效率高。</p>
+<p>思考：想想数据结构中，顺序表和链表分别的优缺点是什么?</p>
+<p>文件的物理结构是文件分配在计算机存储上的分配方式。分配的基本单位是<br>物理块,可以构想一下，一个大文件，如一首音乐23MB，难道直接一整个塞入硬盘吗？显然可能会出现一些问题，硬盘的空间也需要不断调整，就像内存分页一样，硬盘也被分为小的物理块号方便进行调度。</p>
+<ul>
+<li>连续分配</li>
+</ul>
+<p><img src="https://img-blog.csdnimg.cn/20201126233628237.png"></p>
+<blockquote>
+<p>优点：支持顺序访问和直接访问（即随机访问）；连续分配的文件在顺序访问时速度最快<br> 缺点：不方便文件拓展；存储空间利用率低，会产生磁盘碎片</p>
+</blockquote>
+<ul>
+<li>链式分配</li>
+</ul>
+<p><strong>隐式</strong></p>
+<p><img src="https://img-blog.csdnimg.cn/20201126233640747.png"></p>
+<blockquote>
+<p>采用链式分配（隐式链接）方式的文件，只支持顺序访问，不支持随机访问，查找效率低。另外，指向下一个盘块的指针也需要耗费少量的存储空间。</p>
+</blockquote>
+<p><strong>显式</strong></p>
+<p>直观理解就是在隐式的基础上添加了一张表，从表上能看出不同物理块号的下一块的地址</p>
+<blockquote>
+<p>结论：采用链式分配（显式链接）方式的文件，支持顺序访问，也支<br> 持随机访问（想访问i 号逻辑块时，并不需要依次访问之前的0 ~ i-1<br> 号逻辑块），由于块号转换的过程不需要访问磁盘，因此相比于隐式<br> 链接来说，访问速度快很多。<br> 显然，显式链接也不会产生外部碎片，也可以很方便地对文件进行拓<br> 展。</p>
+</blockquote>
+<p><img src="https://img-blog.csdnimg.cn/2020112623365185.png"></p>
+<ul>
+<li><p>索引分配</p>
+<ul>
+<li>单级</li>
+<li>多级</li>
+</ul>
+</li>
+</ul>
+<p>索引就是文件分成不同的物理块存入磁盘，对每个物理块都有一个索引与之对应，需要读写时就通过索引表查询其物理地址进行相关操作。</p>
+<h3 id="4-3-磁盘结构"><a href="#4-3-磁盘结构" class="headerlink" title="4.3 磁盘结构"></a>4.3 磁盘结构</h3><p><img src="https://img-blog.csdnimg.cn/20201126233659674.png"></p>
+<p>磁道：每一圈就是一个磁道，最内侧磁道面积最小，所以数据密度最大</p>
+<p>扇区：磁道被划分为小的磁盘块</p>
+<blockquote>
+<p>一个<code>盘片</code>可能有两个<code>盘面</code>;每个盘面对应一个<code>磁头</code>；所有磁头连在一起，共进退；每个盘面的相对位置的磁道组成<code>柱面</code></p>
+</blockquote>
+<p><img src="https://img-blog.csdnimg.cn/20201126233707976.png"></p>
+<p>两种类型的磁盘：</p>
+<p><img src="https://img-blog.csdnimg.cn/20201126233715230.png"></p>
+<h3 id="4-4-磁盘调度算法"><a href="#4-4-磁盘调度算法" class="headerlink" title="4.4 磁盘调度算法"></a>4.4 磁盘调度算法</h3><p>磁盘调度算法要解决的核心问题就是 <strong>寻道时间</strong> ，即移动磁头的时间，而其他的启动时间、传输时间都很迅速，不是最主要的时间消耗。</p>
+<p>这里讲三种算法：</p>
+<ol>
+<li>先来先服务FCFS</li>
+</ol>
+<p>根据进程请求房屋内磁盘的现后顺序进行调度。符合惯性思维，但在很多时候，效果很差。</p>
+<p><img src="https://img-blog.csdnimg.cn/20201126233722670.png"></p>
+<ol start="2">
+<li>最短寻找时间优先(学过数据结构与算法的话，核心思想就是贪心算法)，该算法会优先处理与当前磁头最近的磁道的需求。</li>
+</ol>
+<p>那么很可能磁头就会如图所示的移动，也会存在饥饿问题：磁头只在一个小区域移动，而不能满足需要远距离移动的需求。例如不断有18-&gt;38，38-&gt;18的需求，那磁头就不会执行18-&gt;150的请求，从而产生饥饿。</p>
+<p><img src="https://img-blog.csdnimg.cn/20201126233729670.png#pic_center"></p>
+<ol start="3">
+<li>扫描算法</li>
+</ol>
+<p>核心思想，只有磁头移动到最外侧磁道的时候才能往内侧移动，移动到最内侧的时候才能向外侧移动。</p>
+<p>这样就不会产生饥饿问题。</p>
+<p><img src="https://img-blog.csdnimg.cn/2020112623373766.png"></p>
+<h3 id="4-5-文件共享"><a href="#4-5-文件共享" class="headerlink" title="4.5 文件共享"></a>4.5 文件共享</h3><p>文件共享分两种链接方式，硬链接和软连接</p>
+<p><code>硬链接</code>就是在另一个用户的目录中，索引结点指针直接指向了发送分享的用户的索引节点，从而实现了共享，count的数量代表文件正在被几个用户使用。</p>
+<p><img src="https://img-blog.csdnimg.cn/20201126233744577.png"></p>
+<p><code>软连接</code>，类似于快捷方式，记录了原文件的路径，然后层层查找。</p>
+<p><img src="https://img-blog.csdnimg.cn/2020112623375160.png#pic_center"></p>
+<p>例如文件2的内容是 C:&#x2F;User1&#x2F;aaa，也就是要去User1中寻找aaa的文件名对应的索引结点。</p>
+<h3 id="4-6-文件保护"><a href="#4-6-文件保护" class="headerlink" title="4.6 文件保护"></a>4.6 文件保护</h3><p>文件保护有三种方式口令、加密、访问控制</p>
+<ol>
+<li>口令</li>
+</ol>
+<p>为文件设置一串口令，就像打开手机需要先解锁。</p>
+<ol start="2">
+<li>加密</li>
+</ol>
+<p>使用加密方法对文件加密，只有拥有正确的解密方法才能解密，有点像不同军队之间进行通信，要实现进行加密，要是想窥探敌情，就要对密文进行破解。</p>
+<p><img src="https://img-blog.csdnimg.cn/20201126233800785.png"></p>
+<ol start="3">
+<li>访问控制</li>
+</ol>
+<p>每个文件的FCB或者索引结点中设置访问控制表，如windows中，设置了很多的访问权限，例如</p>
+<p><img src="https://img-blog.csdnimg.cn/20201126233812666.png"></p>
+<h3 id="4-7-I-x2F-O设备"><a href="#4-7-I-x2F-O设备" class="headerlink" title="4.7 I&#x2F;O设备"></a>4.7 I&#x2F;O设备</h3><p>I&#x2F;O就是输入输出，I&#x2F;O设备就是可以将数据输入到计算机或将计算机数据输出的设备，<code>常见的</code>：鼠标、键盘、音响、显示器、打印机、话筒、摄像头等等。</p>
+<p>I&#x2F;O控制器:CPU无法直接控制I&#x2F;O设备，需要一个电子部件去充当中间人，这个部件就是I&#x2F;O控制器，CPU控制I&#x2F;O控制器，I&#x2F;O控制器控制I&#x2F;O设备。</p>
+<blockquote>
+<p>假如我们的CPU能够控制I&#x2F;O设备，那不同的厂商、不同型号的设备，都要对应进行编码，显然是不切实际的，所以CPU要采用通用调度方式调度I&#x2F;O设备从而需要I&#x2F;O控制器。</p>
+</blockquote>
+<p><strong>I&#x2F;O控制器的组成</strong></p>
+<p><img src="https://img-blog.csdnimg.cn/2020112623382241.png"></p>
+<p>以下作为了解。</p>
+<blockquote>
+<p>例如我们在Java语言中，调用System.out.Println()，这本身并不能在显示器上打印，而需要通过操作系统调用write方法，接着调用字符设备接口，命令显示器写。</p>
+</blockquote>
+</div><div class="article-licensing box"><div class="licensing-title"><p>操作系统复习</p><p><a href="http://nameless1732.github.io/Article/操作系统复习/">http://nameless1732.github.io/Article/操作系统复习/</a></p></div><div class="licensing-meta level is-mobile"><div class="level-left"><div class="level-item is-narrow"><div><h6>作者</h6><p>Jie</p></div></div><div class="level-item is-narrow"><div><h6>发布于</h6><p>2022-06-09</p></div></div><div class="level-item is-narrow"><div><h6>更新于</h6><p>2022-11-12</p></div></div><div class="level-item is-narrow"><div><h6>许可协议</h6><p><a class="icons" rel="noopener" target="_blank" title="Creative Commons" href="https://creativecommons.org/"><i class="icon fab fa-creative-commons"></i></a><a class="icons" rel="noopener" target="_blank" title="Attribution" href="https://creativecommons.org/licenses/by/4.0/"><i class="icon fab fa-creative-commons-by"></i></a><a class="icons" rel="noopener" target="_blank" title="Noncommercial" href="https://creativecommons.org/licenses/by-nc/4.0/"><i class="icon fab fa-creative-commons-nc"></i></a></p></div></div></div></div></div><!--!--></article></div><!--!--><nav class="post-navigation mt-4 level is-mobile"><div class="level-start"><a class="article-nav-prev level level-item link-muted" href="/Article/%E5%A4%A7%E6%95%B0%E6%8D%AE%E6%8A%80%E6%9C%AF%E5%8E%9F%E7%90%86%E4%B8%8E%E5%BA%94%E7%94%A8%E5%A4%8D%E4%B9%A0/"><i class="level-item fas fa-chevron-left"></i><span class="level-item">大数据技术原理与应用复习</span></a></div></nav><!--!--></div><div class="column column-left is-4-tablet is-4-desktop is-3-widescreen  order-1"><div class="card widget" data-type="profile"><div class="card-content"><nav class="level"><div class="level-item has-text-centered flex-shrink-1"><div><figure class="image is-128x128 mx-auto mb-2"><img class="avatar is-rounded" src="https://avatars.githubusercontent.com/u/114732220?v=4" alt="Jie"></figure><p class="title is-size-4 is-block" style="line-height:inherit;">Jie</p><p class="is-size-6 is-block">Web Developer</p><p class="is-size-6 is-flex justify-content-center"><i class="fas fa-map-marker-alt mr-1"></i><span>广东广州</span></p></div></div></nav><nav class="level is-mobile"><div class="level-item has-text-centered is-marginless"><div><p class="heading">文章</p><a href="/archives"><p class="title">12</p></a></div></div><div class="level-item has-text-centered is-marginless"><div><p class="heading">分类</p><a href="/categories"><p class="title">5</p></a></div></div><div class="level-item has-text-centered is-marginless"><div><p class="heading">标签</p><a href="/tags"><p class="title">5</p></a></div></div></nav><div class="level"><a class="level-item button is-primary is-rounded" href="https://github.com/Nameless1732" target="_blank" rel="noopener">关注我</a></div><div class="level is-mobile is-multiline"><a class="level-item button is-transparent is-marginless" target="_blank" rel="noopener" title="Github" href="https://github.com/Nameless1732"><i class="fab fa-github"></i></a><a class="level-item button is-transparent is-marginless" target="_blank" rel="noopener" title="Facebook" href="https://facebook.com"><i class="fab fa-facebook"></i></a><a class="level-item button is-transparent is-marginless" target="_blank" rel="noopener" title="Twitter" href="https://twitter.com"><i class="fab fa-twitter"></i></a><a class="level-item button is-transparent is-marginless" target="_blank" rel="noopener" title="Dribbble" href="https://dribbble.com"><i class="fab fa-dribbble"></i></a><a class="level-item button is-transparent is-marginless" target="_blank" rel="noopener" title="RSS" href="/"><i class="fas fa-rss"></i></a></div></div></div><!--!--><div class="card widget" data-type="links"><div class="card-content"><div class="menu"><h3 class="menu-label">链接</h3><ul class="menu-list"><li><a class="level is-mobile" href="https://hexo.io" target="_blank" rel="noopener"><span class="level-left"><span class="level-item">Hexo</span></span><span class="level-right"><span class="level-item tag">hexo.io</span></span></a></li><li><a class="level is-mobile" href="https://bulma.io" target="_blank" rel="noopener"><span class="level-left"><span class="level-item">Bulma</span></span><span class="level-right"><span class="level-item tag">bulma.io</span></span></a></li></ul></div></div></div><div class="card widget" data-type="archives"><div class="card-content"><div class="menu"><h3 class="menu-label">归档</h3><ul class="menu-list"><li><a class="level is-mobile" href="/archives/2023/04/"><span class="level-start"><span class="level-item">四月 2023</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile" href="/archives/2022/11/"><span class="level-start"><span class="level-item">十一月 2022</span></span><span class="level-end"><span class="level-item tag">6</span></span></a></li><li><a class="level is-mobile" href="/archives/2022/09/"><span class="level-start"><span class="level-item">九月 2022</span></span><span class="level-end"><span class="level-item tag">2</span></span></a></li><li><a class="level is-mobile" href="/archives/2022/06/"><span class="level-start"><span class="level-item">六月 2022</span></span><span class="level-end"><span class="level-item tag">3</span></span></a></li></ul></div></div></div><div class="column-right-shadow is-hidden-widescreen"></div></div><div class="column column-right is-4-tablet is-4-desktop is-3-widescreen is-hidden-touch is-hidden-desktop-only order-3"><div class="card widget" data-type="categories"><div class="card-content"><div class="menu"><h3 class="menu-label">分类</h3><ul class="menu-list"><li><a class="level is-mobile" href="/categories/Diary/"><span class="level-start"><span class="level-item">Diary</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile" href="/categories/Termux/"><span class="level-start"><span class="level-item">Termux</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile" href="/categories/%E6%95%B0%E6%8D%AE%E9%87%87%E9%9B%86/"><span class="level-start"><span class="level-item">数据采集</span></span><span class="level-end"><span class="level-item tag">3</span></span></a></li><li><a class="level is-mobile" href="/categories/%E6%9C%9F%E6%9C%AB%E5%A4%8D%E4%B9%A0/"><span class="level-start"><span class="level-item">期末复习</span></span><span class="level-end"><span class="level-item tag">3</span></span></a></li><li><a class="level is-mobile" href="/categories/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/"><span class="level-start"><span class="level-item">机器学习</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li></ul></div></div></div><div class="card widget" data-type="recent-posts"><div class="card-content"><h3 class="menu-label">最新文章</h3><article class="media"><div class="media-content"><p class="date"><time dateTime="2023-04-18T21:19:47.000Z">2023-04-19</time></p><p class="title"><a href="/Article/Mysql%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98/">Mysql常见问题</a></p></div></article><article class="media"><div class="media-content"><p class="date"><time dateTime="2022-11-17T07:37:54.000Z">2022-11-17</time></p><p class="title"><a href="/Article/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/">机器学习复习</a></p><p class="categories"><a href="/categories/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/">机器学习</a></p></div></article><article class="media"><div class="media-content"><p class="date"><time dateTime="2022-11-16T13:53:54.000Z">2022-11-16</time></p><p class="title"><a href="/Article/Kafka%E5%85%A5%E9%97%A8/">Kafka入门</a></p><p class="categories"><a href="/categories/%E6%95%B0%E6%8D%AE%E9%87%87%E9%9B%86/">数据采集</a></p></div></article><article class="media"><div class="media-content"><p class="date"><time dateTime="2022-11-11T15:27:54.000Z">2022-11-11</time></p><p class="title"><a href="/Article/Scrapy%E7%88%AC%E8%99%AB%E5%85%A5%E9%97%A8/">Scrapy爬虫入门</a></p><p class="categories"><a href="/categories/%E6%95%B0%E6%8D%AE%E9%87%87%E9%9B%86/">数据采集</a></p></div></article><article class="media"><div class="media-content"><p class="date"><time dateTime="2022-11-11T13:31:54.000Z">2022-11-11</time></p><p class="title"><a href="/Article/Python%E7%88%AC%E8%99%AB%E5%85%A5%E9%97%A8/">Python爬虫入门</a></p><p class="categories"><a href="/categories/%E6%95%B0%E6%8D%AE%E9%87%87%E9%9B%86/">数据采集</a></p></div></article></div></div><div class="card widget" data-type="tags"><div class="card-content"><div class="menu"><h3 class="menu-label">标签</h3><div class="field is-grouped is-grouped-multiline"><div class="control"><a class="tags has-addons" href="/tags/ADB/"><span class="tag">ADB</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/Android/"><span class="tag">Android</span><span class="tag">2</span></a></div><div class="control"><a class="tags has-addons" href="/tags/Games/"><span class="tag">Games</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/Linux/"><span class="tag">Linux</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/PS4/"><span class="tag">PS4</span><span class="tag">1</span></a></div></div></div></div></div></div></div></div></section><footer class="footer"><div class="container"><div class="level"><div class="level-start"><a class="footer-logo is-block mb-2" href="/"><img src="/img/logo.svg" alt="Nameless1732" height="28"></a><p class="is-size-7"><span>&copy; 2023 Jie</span>  Powered by <a href="https://hexo.io/" target="_blank" rel="noopener">Hexo</a> &amp; <a href="https://github.com/ppoffice/hexo-theme-icarus" target="_blank" rel="noopener">Icarus</a></p></div><div class="level-end"><div class="field has-addons"><p class="control"><a class="button is-transparent is-large" target="_blank" rel="noopener" title="Creative Commons" href="https://creativecommons.org/"><i class="fab fa-creative-commons"></i></a></p><p class="control"><a class="button is-transparent is-large" target="_blank" rel="noopener" title="Attribution 4.0 International" href="https://creativecommons.org/licenses/by/4.0/"><i class="fab fa-creative-commons-by"></i></a></p><p class="control"><a class="button is-transparent is-large" target="_blank" rel="noopener" title="GitHub" href="https://github.com/Nameless1732"><i class="fab fa-github"></i></a></p></div></div></div></div></footer><script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.22.2/moment-with-locales.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.4/clipboard.min.js" defer></script><script>moment.locale("zh-CN");</script><script>var IcarusThemeSettings = {
+            article: {
+                highlight: {
+                    clipboard: true,
+                    fold: 'unfolded'
+                }
+            }
+        };</script><script src="/js/column.js"></script><script src="/js/animation.js"></script><a id="back-to-top" title="回到顶端" href="javascript:;"><i class="fas fa-chevron-up"></i></a><script src="/js/back_to_top.js" defer></script><!--!--><!--!--><!--!--><script src="https://cdnjs.cloudflare.com/ajax/libs/cookieconsent/3.1.1/cookieconsent.min.js" defer></script><script>window.addEventListener("load", () => {
+      window.cookieconsent.initialise({
+        type: "info",
+        theme: "edgeless",
+        static: false,
+        position: "bottom-left",
+        content: {
+          message: "此网站使用Cookie来改善您的体验。",
+          dismiss: "知道了！",
+          allow: "允许使用Cookie",
+          deny: "拒绝",
+          link: "了解更多",
+          policy: "Cookie政策",
+          href: "https://www.cookiesandyou.com/",
+        },
+        palette: {
+          popup: {
+            background: "#edeff5",
+            text: "#838391"
+          },
+          button: {
+            background: "#4b81e8"
+          },
+        },
+      });
+    });</script><script src="https://cdnjs.cloudflare.com/ajax/libs/lightgallery/1.10.0/js/lightgallery.min.js" defer></script><script src="https://cdnjs.cloudflare.com/ajax/libs/justifiedGallery/3.8.1/js/jquery.justifiedGallery.min.js" defer></script><script>window.addEventListener("load", () => {
+            if (typeof $.fn.lightGallery === 'function') {
+                $('.article').lightGallery({ selector: '.gallery-item' });
+            }
+            if (typeof $.fn.justifiedGallery === 'function') {
+                if ($('.justified-gallery > p > .gallery-item').length) {
+                    $('.justified-gallery > p > .gallery-item').unwrap();
+                }
+                $('.justified-gallery').justifiedGallery();
+            }
+        });</script><!--!--><!--!--><!--!--><!--!--><!--!--><script src="/js/main.js" defer></script><div class="searchbox"><div class="searchbox-container"><div class="searchbox-header"><div class="searchbox-input-container"><input class="searchbox-input" type="text" placeholder="想要查找什么..."></div><a class="searchbox-close" href="javascript:;">×</a></div><div class="searchbox-body"></div></div></div><script src="/js/insight.js" defer></script><script>document.addEventListener('DOMContentLoaded', function () {
+            loadInsight({"contentUrl":"/content.json"}, {"hint":"想要查找什么...","untitled":"(无标题)","posts":"文章","pages":"页面","categories":"分类","tags":"标签"});
+        });</script></body></html>
